@@ -6957,7 +6957,7 @@ void vrend_renderer_fill_caps(uint32_t set, uint32_t version,
    caps->v2.tgsi_invariant = 1;
 
 #ifdef VULKAN
-    if (set == 2 && version == 2) {
+    if (set == 2) {
         vrend_renderer_fill_caps_vulkan(caps);
     }
 #endif
