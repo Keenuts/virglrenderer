@@ -129,16 +129,13 @@ AS_IF([test "x$with_glx" = "xyes"], [
 ])
 AM_CONDITIONAL([WITH_GLX], [test "x$with_glx" = "xyes"])
 
-AC_ARG_ENABLE([vulkan],
-    [AS_HELP_STRING([--enable-vulkan],
-        [enable vulkan support(experimental) @<:@default=disabled@:>@])],
-    [enable_vulkan="$enableval"],
-    [enable_vulkan=no]
-)
-
-if test "x$enable_vulkan" = xyes; then
-    DEFINES="$DEFINES -DVULKAN"
-fi
+AC_ARG_WITH([vulkan], AS_HELP_STRING([--with-vulkan], [enable vulkan(experimental)]))
+AS_IF([test "x$with_vulkan" = "xyes"], [
+  AC_CHECK_LIB([vulkan], [vkCreateInstance])
+  PKG_CHECK_MODULES([VULKAN], [vulkan])
+  DEFINES="$DEFINES -DVULKAN"
+])
+AM_CONDITIONAL([WITH_VULKAN], [test "x$with_vulkan" = "xyes"])
 
 AC_SUBST([DEFINES])
 AC_CONFIG_FILES([
@@ -162,7 +159,7 @@ AC_MSG_NOTICE([
 
       glx:                      $with_glx
       egl:                      $epoxy_has_egl
-      vulkan:                   $enable_vulkan
+      vulkan:                   $with_vulkan
       debug:                    $enable_debug
       tests:                    $build_tests
 
