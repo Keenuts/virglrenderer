@@ -31,76 +31,60 @@ virgl_vk_get_physical_device_queue_family_properties(
     VkQueueFamilyProperties* pQueueFamilyProperties
 );
 
-#if 0
 VIRGL_EXPORT VkResult
-virgl_vk_allocate_descriptor_sets(VkDevice device,
-                                  const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                  VkDescriptorSet* pDescriptorSets);
+virgl_vk_create_device(
+    VkPhysicalDevice physicalDevice,
+    const VkDeviceCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkDevice *pDevice
+);
 
-VIRGL_EXPORT VkResult
-virgl_vk_allocate_memory(VkDevice device,
-                         const VkMemoryAllocateInfo* pAllocateInfo,
-                         const VkAllocationCallbacks* pAllocator,
-                         VkDeviceMemory* pMemory);
-
-
-VIRGL_EXPORT VkResult
-virgl_vk_create_buffer(VkDevice device,
-                       const VkBufferCreateInfo* pCreateInfo,
-                       const VkAllocationCallbacks* pAllocator,
-                       VkBuffer* pBuffer);
+VIRGL_EXPORT void
+virgl_vk_get_device_queue(
+    VkDevice device,
+    uint32_t queueFamilyIndex,
+    uint32_t queueIndex,
+    VkQueue *pQueue
+);
 
 VIRGL_EXPORT VkResult
-virgl_vk_bind_buffer_memory(VkDevice device,
-                            VkBuffer buffer,
-                            VkDeviceMemory memory,
-                            VkDeviceSize memoryOffset);
+virgl_vk_create_descriptor_set_layout(
+    VkDevice device,
+    const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkDescriptorSetLayout *pSetLayout
+);
 
 VIRGL_EXPORT VkResult
-virgl_vk_unmap_memory(VkDevice device,
-                      VkDeviceMemory memory);
+virgl_vk_create_descriptor_pool(
+    VkDevice device,
+    const VkDescriptorPoolCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkDescriptorPool *pDescriptorPool
+);
 
 VIRGL_EXPORT VkResult
-virgl_vk_free_memory(VkDevice device,
-                     VkDeviceMemory memory,
-                     const VkAllocationCallbacks* pAllocator);
+virgl_vk_create_command_pool(
+    VkDevice device,
+    const VkCommandPoolCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkCommandPool *pCommandPool
+);
 
-VIRGL_EXPORT VkResult vkDestroyBuffer();
-VIRGL_EXPORT VkResult vkAllocateCommandBuffers();
-VIRGL_EXPORT VkResult vkBeginCommandBuffer();
-VIRGL_EXPORT VkResult vkBindBufferMemory();
-VIRGL_EXPORT VkResult vkCmdBindDescriptorSets();
-VIRGL_EXPORT VkResult vkCmdBindPipeline();
-VIRGL_EXPORT VkResult vkCmdDispatch();
-VIRGL_EXPORT VkResult vkCreateComputePipelines();
-VIRGL_EXPORT VkResult vkCreateFence();
-VIRGL_EXPORT VkResult vkCreatePipelineLayout();
-VIRGL_EXPORT VkResult vkCreateShaderModule();
-VIRGL_EXPORT VkResult vkDestroyBuffer();
-VIRGL_EXPORT VkResult vkDestroyCommandPool();
-VIRGL_EXPORT VkResult vkDestroyDescriptorPool();
-VIRGL_EXPORT VkResult vkDestroyDescriptorSetLayout();
-VIRGL_EXPORT VkResult vkDestroyDevice();
-VIRGL_EXPORT VkResult vkDestroyFence();
-VIRGL_EXPORT VkResult vkDestroyInstance();
-VIRGL_EXPORT VkResult vkDestroyPipeline();
-VIRGL_EXPORT VkResult vkDestroyPipelineLayout();
-VIRGL_EXPORT VkResult vkDestroyShaderModule();
-VIRGL_EXPORT VkResult vkEndCommandBuffer();
-VIRGL_EXPORT VkResult vkFreeMemory();
-VIRGL_EXPORT VkResult vkMapMemory();
-VIRGL_EXPORT VkResult vkQueueSubmit();
-VIRGL_EXPORT VkResult vkUnmapMemory();
-VIRGL_EXPORT VkResult vkWaitForFences();
-VIRGL_EXPORT VkResult vkCreateCommandPool();
-VIRGL_EXPORT VkResult vkCreateDescriptorPool();
-VIRGL_EXPORT VkResult vkCreateDescriptorSetLayout();
-VIRGL_EXPORT VkResult vkCreateDevice();
-VIRGL_EXPORT VkResult vkEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices);
-VIRGL_EXPORT VkResult vkGetDeviceQueue();
-VIRGL_EXPORT VkResult vkGetPhysicalDeviceMemoryProperties();
-VIRGL_EXPORT VkResult vkGetPhysicalDeviceQueueFamilyProperties();
-VIRGL_EXPORT VkResult vkUpdateDescriptorSets();
-#endif
+VIRGL_EXPORT VkResult
+virgl_vk_allocate_descriptor_sets(
+    VkDevice device,
+    const VkDescriptorSetAllocateInfo *pAllocateInfo,
+    VkDescriptorSet *pDescriptorSets
+);
+
+VIRGL_EXPORT void
+virgl_vk_update_descriptor_sets(
+    VkDevice device,
+    uint32_t descriptorWriteCount,
+    const VkWriteDescriptorSet *pDescriptorWrites,
+    uint32_t descriptorCopyCount,
+    const VkCopyDescriptorSet *pDescriptorCopies
+);
 
 #endif

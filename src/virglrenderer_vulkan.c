@@ -114,3 +114,101 @@ void virgl_vk_get_physical_device_queue_family_properties(
             pQueueFamilyProperties
     );
 }
+
+VkResult virgl_vk_create_device(
+    VkPhysicalDevice physicalDevice,
+    const VkDeviceCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkDevice *pDevice)
+{
+    return VK_CALL(vkCreateDevice,
+        physicalDevice,
+        pCreateInfo,
+        pAllocator,
+        pDevice
+    );
+}
+
+void virgl_vk_get_device_queue(
+    VkDevice device,
+    uint32_t queueFamilyIndex,
+    uint32_t queueIndex,
+    VkQueue *pQueue)
+{
+    VK_CALL(vkGetDeviceQueue,
+        device,
+        queueFamilyIndex,
+        queueIndex,
+        pQueue
+    );
+}
+
+VkResult virgl_vk_create_descriptor_set_layout(
+    VkDevice device,
+    const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkDescriptorSetLayout *pSetLayout)
+{
+    return VK_CALL(vkCreateDescriptorSetLayout,
+        device,
+        pCreateInfo,
+        pAllocator,
+        pSetLayout
+    );
+}
+
+VkResult virgl_vk_create_descriptor_pool(
+    VkDevice device,
+    const VkDescriptorPoolCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkDescriptorPool *pDescriptorPool)
+{
+    return VK_CALL(vkCreateDescriptorPool,
+        device,
+        pCreateInfo,
+        pAllocator,
+        pDescriptorPool
+    );
+}
+
+VkResult virgl_vk_create_command_pool(
+    VkDevice device,
+    const VkCommandPoolCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkCommandPool *pCommandPool)
+{
+    return VK_CALL(vkCreateCommandPool,
+        device,
+        pCreateInfo,
+        pAllocator,
+        pCommandPool
+    );
+}
+
+VkResult virgl_vk_allocate_descriptor_sets(
+    VkDevice device,
+    const VkDescriptorSetAllocateInfo *pAllocateInfo,
+    VkDescriptorSet *pDescriptorSets)
+{
+    return VK_CALL(vkAllocateDescriptorSets,
+        device,
+        pAllocateInfo,
+        pDescriptorSets
+    );
+}
+
+void virgl_vk_update_descriptor_sets(
+    VkDevice device,
+    uint32_t descriptorWriteCount,
+    const VkWriteDescriptorSet *pDescriptorWrites,
+    uint32_t descriptorCopyCount,
+    const VkCopyDescriptorSet *pDescriptorCopies)
+{
+    VK_CALL(vkUpdateDescriptorSets,
+        device,
+        descriptorWriteCount,
+        pDescriptorWrites,
+        descriptorCopyCount,
+        pDescriptorCopies
+    );
+}
