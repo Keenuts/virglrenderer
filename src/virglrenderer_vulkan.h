@@ -87,4 +87,162 @@ virgl_vk_update_descriptor_sets(
     const VkCopyDescriptorSet *pDescriptorCopies
 );
 
+VIRGL_EXPORT VkResult virgl_vk_allocate_command_buffers(
+    VkDevice device,
+    const VkCommandBufferAllocateInfo *pAllocateInfo,
+    VkCommandBuffer *pCommandBuffers);
+
+VIRGL_EXPORT VkResult virgl_vk_allocate_memory(
+    VkDevice device,
+    const VkMemoryAllocateInfo *pAllocateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkDeviceMemory *pMemory);
+
+VIRGL_EXPORT VkResult virgl_vk_begin_command_buffer(
+    VkCommandBuffer commandBuffer,
+    const VkCommandBufferBeginInfo *pBeginInfo);
+
+VIRGL_EXPORT VkResult virgl_vk_bind_buffer_memory(
+    VkDevice device,
+    VkBuffer buffer,
+    VkDeviceMemory memory,
+    VkDeviceSize memoryOffset);
+
+VIRGL_EXPORT void virgl_vk_bind_descriptor_sets(
+    VkCommandBuffer commandBuffer,
+    VkPipelineBindPoint pipelineBindPoint,
+    VkPipelineLayout layout,
+    uint32_t firstSet,
+    uint32_t descriptorSetCount,
+    const VkDescriptorSet *pDescriptorSets,
+    uint32_t dynamicOffsetCount,
+    const uint32_t *pDynamicOffsets);
+
+VIRGL_EXPORT void virgl_vk_cmd_bind_pipeline(
+    VkCommandBuffer commandBuffer,
+    VkPipelineBindPoint pipelineBindPoint,
+    VkPipeline pipeline);
+
+VIRGL_EXPORT void virgl_vk_cmd_dispatch(
+    VkCommandBuffer commandBuffer,
+    uint32_t groupCountX,
+    uint32_t groupCountY,
+    uint32_t groupCountZ);
+
+VIRGL_EXPORT VkResult virgl_vk_create_buffer(
+    VkDevice device,
+    const VkBufferCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkBuffer *pBuffer);
+
+VIRGL_EXPORT VkResult virgl_vk_create_compute_pipeline(
+    VkDevice device,
+    VkPipelineCache pipelineCache,
+    uint32_t createInfoCount,
+    const VkComputePipelineCreateInfo *pCreateInfos,
+    const VkAllocationCallbacks *pAllocator,
+    VkPipeline *pPipelines);
+
+VIRGL_EXPORT VkResult virgl_vk_create_fence(
+    VkDevice device,
+    const VkFenceCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkFence *pFence);
+
+VIRGL_EXPORT VkResult virgl_vk_create_pipeline_layout(
+    VkDevice device,
+    const VkPipelineLayoutCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkPipelineLayout *pPipelineLayout);
+
+VIRGL_EXPORT VkResult virgl_vk_create_shader_module(
+    VkDevice device,
+    const VkShaderModuleCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkShaderModule *pShaderModule);
+
+VIRGL_EXPORT void virgl_vk_destroy_buffer(
+    VkDevice device,
+    VkBuffer buffer,
+    const VkAllocationCallbacks *pAllocator);
+
+VIRGL_EXPORT VkResult virgl_vk_end_command_buffer(
+    VkCommandBuffer commandBuffer);
+
+VIRGL_EXPORT void virgl_vk_free_memory(
+     VkDevice device,
+     VkDeviceMemory memory,
+     const VkAllocationCallbacks* pAllocator);
+
+VIRGL_EXPORT void virgl_vk_get_physical_device_memory_properties(
+     VkPhysicalDevice physicalDevice,
+     VkPhysicalDeviceMemoryProperties* pMemoryProperties);
+
+VIRGL_EXPORT VkResult virgl_vk_queue_submit(
+     VkQueue queue,
+     uint32_t submitCount,
+     const VkSubmitInfo* pSubmits,
+     VkFence fence);
+
+VIRGL_EXPORT void virgl_vk_unmap_memory(
+     VkDevice device,
+     VkDeviceMemory memory);
+
+VIRGL_EXPORT VkResult virgl_vk_wait_for_fences(
+     VkDevice device,
+     uint32_t fenceCount,
+     const VkFence* pFences,
+     VkBool32 waitAll,
+     uint64_t timeout);
+
+VIRGL_EXPORT void virgl_vk_destroy_fences(
+     VkDevice device,
+     VkFence fence,
+     const VkAllocationCallbacks* pAllocator);
+
+VIRGL_EXPORT void virgl_vk_destroy_shader_module(
+     VkDevice device,
+     VkShaderModule shaderModule,
+     const VkAllocationCallbacks* pAllocator);
+
+VIRGL_EXPORT void virgl_vk_descriptor_pool(
+     VkDevice device,
+     VkDescriptorPool descriptorPool,
+     const VkAllocationCallbacks* pAllocator);
+
+VIRGL_EXPORT void virgl_vk_destroy_descriptor_set_layout(
+     VkDevice device,
+     VkDescriptorSetLayout descriptorSetLayout,
+     const VkAllocationCallbacks* pAllocator);
+
+VIRGL_EXPORT void virgl_vk_destroy_pipeline_layout(
+     VkDevice device,
+     VkPipelineLayout pipelineLayout,
+     const VkAllocationCallbacks* pAllocator);
+
+VIRGL_EXPORT void virgl_vk_destroy_pipeline(
+     VkDevice device,
+     VkPipeline pipeline,
+     const VkAllocationCallbacks* pAllocator);
+
+VIRGL_EXPORT void virgl_vk_destroy_command_pool(
+     VkDevice device,
+     VkCommandPool commandPool,
+     const VkAllocationCallbacks* pAllocator);
+
+VIRGL_EXPORT void virgl_vk_destroy_device(
+    VkDevice device,
+    const VkAllocationCallbacks* pAllocator);
+
+VIRGL_EXPORT void virgl_vk_destroy_instance(
+     VkInstance instance,
+     const VkAllocationCallbacks* pAllocator);
+
+VIRGL_EXPORT VkResult virgl_vk_map_memory(
+     VkDevice device,
+     VkDeviceMemory memory,
+     VkDeviceSize offset,
+     VkDeviceSize size,
+     VkMemoryMapFlags flags,
+     void** ppData);
 #endif
