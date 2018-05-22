@@ -1,16 +1,35 @@
 #ifndef VIRGLRENDERER_VULKAN_H
 #define VIRGLRENDERER_VULKAN_H
 
+#include "virglrenderer.h"
 #include <vulkan/vulkan.h>
 
 VIRGL_EXPORT VkResult
-virgl_vk_create_instance(const VkInstanceCreateInfo *pCreateInfo,
-                         const VkAllocationCallbacks *pAllocator,
-                         VkInstance *pInstance);
+virgl_vk_create_instance(
+    const VkInstanceCreateInfo *pCreateInfo,
+    const VkAllocationCallbacks *pAllocator,
+    VkInstance *pInstance
+);
 
 VIRGL_EXPORT VkResult
-virgl_vk_enumerate_instance_layer_properties(uint32_t *pPropertyCount,
-                                             VkLayerProperties *pProperties);
+virgl_vk_enumerate_instance_layer_properties(
+    uint32_t *pPropertyCount,
+    VkLayerProperties *pProperties
+);
+
+VIRGL_EXPORT VkResult
+virgl_vk_enumerate_physical_devices(
+    VkInstance instance,
+    uint32_t* pPhysicalDeviceCount,
+    VkPhysicalDevice* pPhysicalDevices
+);
+
+VIRGL_EXPORT void
+virgl_vk_get_physical_device_queue_family_properties(
+    VkPhysicalDevice physicalDevice,
+    uint32_t *pQueueFamilyPropertyCount,
+    VkQueueFamilyProperties* pQueueFamilyProperties
+);
 
 #if 0
 VIRGL_EXPORT VkResult

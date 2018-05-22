@@ -94,3 +94,23 @@ VkResult virgl_vk_enumerate_instance_layer_properties(
 {
    return VK_CALL(vkEnumerateInstanceLayerProperties, pPropertyCount, pProperties);
 }
+
+VkResult virgl_vk_enumerate_physical_devices(VkInstance instance,
+                                             uint32_t* pPhysicalDeviceCount,
+                                             VkPhysicalDevice* pPhysicalDevices)
+{
+   return VK_CALL(vkEnumeratePhysicalDevices, instance, pPhysicalDeviceCount,
+                  pPhysicalDevices);
+}
+
+void virgl_vk_get_physical_device_queue_family_properties(
+    VkPhysicalDevice physicalDevice,
+    uint32_t *pQueueFamilyPropertyCount,
+    VkQueueFamilyProperties* pQueueFamilyProperties)
+{
+    VK_CALL(vkGetPhysicalDeviceQueueFamilyProperties,
+            physicalDevice,
+            pQueueFamilyPropertyCount,
+            pQueueFamilyProperties
+    );
+}
