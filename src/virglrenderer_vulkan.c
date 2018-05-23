@@ -2,12 +2,13 @@
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <vulkan/vulkan.h>
 
 struct symbol {
-   const char *sym_name;
+   const char *name;
    int hash;
-   void *sym_addr;
+   void *addr;
 };
 
 struct symtab {
@@ -44,7 +45,10 @@ static void* lookup_symbol(const char *name)
          continue;
       }
 
-      return _vk_symbols.symbols[i].sym_addr;
+      if (strcmp(_vk_symbols.symbols[i].name, name)) {
+          continue;
+      }
+      return _vk_symbols.symbols[i].addr;
    }
 
    if (_vk_symbols.used >= _vk_symbols.capacity) {
@@ -59,7 +63,8 @@ static void* lookup_symbol(const char *name)
    assert(addr);
 
    _vk_symbols.symbols[_vk_symbols.used].hash = hash;
-   _vk_symbols.symbols[_vk_symbols.used].sym_addr = addr;
+   _vk_symbols.symbols[_vk_symbols.used].addr = addr;
+   _vk_symbols.symbols[_vk_symbols.used].name = strdup(name);
    _vk_symbols.used++;
 
    return addr;
