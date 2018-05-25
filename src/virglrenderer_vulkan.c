@@ -5,6 +5,8 @@
 #include <string.h>
 #include <vulkan/vulkan.h>
 
+#define VULKAN_LIB_PATH "/lib/libvulkan.so"
+
 struct symbol {
    const char *name;
    int hash;
@@ -73,8 +75,8 @@ static void* lookup_symbol(const char *name)
 static void* load_vulkan_function(const char* name)
 {
    if (_vk_symbols.capacity == 0) {
-      _vk_symbols.lib_handle = dlopen("/usr/lib/libvulkan.so", RTLD_LAZY);
-      assert(_vk_symbols.lib_handle);
+      _vk_symbols.lib_handle = dlopen(VULKAN_LIB_PATH, RTLD_LAZY);
+      assert(_vk_symbols.lib_handle && "Unable to load vulkan lib at " VULKAN_LIB_PATH);
       _vk_symbols.capacity = 1;
       _vk_symbols.symbols = malloc(sizeof(*_vk_symbols.symbols));
    }
