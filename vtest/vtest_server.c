@@ -94,53 +94,56 @@ static int run_renderer(int in_fd, int out_fd)
 again:
     ret = vtest_wait_for_fd_read(in_fd);
     if (ret < 0)
-      goto fail;
+        goto fail;
 
     ret = vtest_block_read(in_fd, &header, sizeof(header));
 
     if (ret == 8) {
-      if (!inited) {
-	if (header[1] != VCMD_CREATE_RENDERER)
-	  goto fail;
-	ret = vtest_create_renderer(in_fd, out_fd, header[0]);
-	inited = true;
-      }
-      vtest_poll();
-      switch (header[1]) {
-      case VCMD_GET_CAPS:
-	ret = vtest_send_caps();
-	break;
-      case VCMD_RESOURCE_CREATE:
-	ret = vtest_create_resource();
-	break;
-      case VCMD_RESOURCE_UNREF:
-	ret = vtest_resource_unref();
-	break;
-      case VCMD_SUBMIT_CMD:
-	ret = vtest_submit_cmd(header[0]);
-	break;
-      case VCMD_TRANSFER_GET:
-	ret = vtest_transfer_get(header[0]);
-	break;
-      case VCMD_TRANSFER_PUT:
-	ret = vtest_transfer_put(header[0]);
-	break;
-      case VCMD_RESOURCE_BUSY_WAIT:
-        vtest_renderer_create_fence();
-	ret = vtest_resource_busy_wait();
-	break;
-      default:
-	break;
-      }
+        if (!inited) {
+            if (header[1] != VCMD_CREATE_RENDERER) {
+                goto fail;
+            }
+            ret = vtest_create_renderer(in_fd, out_fd, header[0]);
+            inited = true;
+        }
 
-      if (ret < 0) {
-	goto fail;
-      }
+        vtest_poll();
 
-      goto again;
+        switch (header[1]) {
+            case VCMD_GET_CAPS:
+                ret = vtest_send_caps();
+                break;
+            case VCMD_RESOURCE_CREATE:
+                ret = vtest_create_resource();
+                break;
+            case VCMD_RESOURCE_UNREF:
+                ret = vtest_resource_unref();
+                break;
+            case VCMD_SUBMIT_CMD:
+                ret = vtest_submit_cmd(header[0]);
+                break;
+            case VCMD_TRANSFER_GET:
+                ret = vtest_transfer_get(header[0]);
+                break;
+            case VCMD_TRANSFER_PUT:
+                ret = vtest_transfer_put(header[0]);
+                break;
+            case VCMD_RESOURCE_BUSY_WAIT:
+                vtest_renderer_create_fence();
+                ret = vtest_resource_busy_wait();
+                break;
+            default:
+                break;
+        }
+
+        if (ret < 0) {
+            goto fail;
+        }
+
+        goto again;
     }
     if (ret <= 0) {
-      goto fail;
+        goto fail;
     }
 fail:
     fprintf(stderr, "socket failed - closing renderer\n");
