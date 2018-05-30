@@ -153,7 +153,7 @@ void vtest_destroy_renderer(void)
   renderer.out_fd = -1;
 }
 
-int vtest_send_caps(void)
+int vtest_send_caps()
 {
     uint32_t  max_ver, max_size;
     void *caps_buf;
@@ -182,7 +182,7 @@ end:
     return 0;
 }
 
-int vtest_create_resource(void)
+int vtest_create_resource()
 {
     uint32_t res_create_buf[VCMD_RES_CREATE_SIZE];
     struct virgl_renderer_resource_create_args args;
@@ -211,7 +211,7 @@ int vtest_create_resource(void)
     return ret;
 }
 
-int vtest_resource_unref(void)
+int vtest_resource_unref()
 {
     uint32_t res_unref_buf[VCMD_RES_UNREF_SIZE];
     int ret;
@@ -347,7 +347,7 @@ int vtest_transfer_put(uint32_t length_dw)
     return 0;
 }
 
-int vtest_resource_busy_wait(void)
+int vtest_resource_busy_wait()
 {
   uint32_t bw_buf[VCMD_BUSY_WAIT_SIZE];
   int ret, fd;
@@ -392,7 +392,7 @@ int vtest_resource_busy_wait(void)
   return 0;
 }
 
-int vtest_renderer_create_fence(void)
+int vtest_renderer_create_fence()
 {
   virgl_renderer_create_fence(fence_id++, ctx_id);
   return 0;

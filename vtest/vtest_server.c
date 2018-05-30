@@ -43,26 +43,26 @@ static int vtest_open_socket(const char *path)
 
     sock = socket(PF_UNIX, SOCK_STREAM, 0);
     if (sock < 0) {
-	return -1;
+        return -1;
     }
 
     memset(&un, 0, sizeof(un));
     un.sun_family = AF_UNIX;
-    
+
     snprintf(un.sun_path, sizeof(un.sun_path), "%s", path);
 
     unlink(un.sun_path);
 
     if (bind(sock, (struct sockaddr *)&un, sizeof(un)) < 0) {
-	goto err;
+        goto err;
     }
-    
+
     if (listen(sock, 1) < 0){
-	goto err;
+        goto err;
     }
 
     return sock;
- err:
+err:
     close(sock);
     return -1;
 }
@@ -77,80 +77,80 @@ static int wait_for_socket_accept(int sock)
 
     ret = select(sock + 1, &read_fds, NULL, NULL, NULL);
     if (ret < 0)
-	return ret;
+        return ret;
 
     if (FD_ISSET(sock, &read_fds)) {	
-	new_fd = accept(sock, NULL, NULL);
-	return new_fd;
+        new_fd = accept(sock, NULL, NULL);
+        return new_fd;
     }
     return -1;
 }
 
+static int (*_commands_ftable[])(uint32_t header) = {
+    NULL /* CMD ids starts at 1 */,
+    vtest_send_caps,
+    vtest_create_resource,
+    vtest_resource_unref,
+    vtest_transfer_get,
+    vtest_transfer_put,
+    vtest_submit_cmd,
+    vtest_resource_busy_wait,
+    NULL /* vtest_create_renderer */,
+};
+#define COMMAND_COUNT (sizeof(_commands_ftable) / sizeof(*_commands_ftable))
+
 static int run_renderer(int in_fd, int out_fd)
 {
-    int ret;
-    uint32_t header[VTEST_HDR_SIZE];
-    bool inited = false;
+   int ret;
+   uint32_t header[VTEST_HDR_SIZE];
+   bool inited = false;
+
+   do {
 again:
-    ret = vtest_wait_for_fd_read(in_fd);
-    if (ret < 0)
-        goto fail;
+      ret = vtest_wait_for_fd_read(in_fd);
+      if (ret < 0) {
+         break;
+      }
 
-    ret = vtest_block_read(in_fd, &header, sizeof(header));
+      ret = vtest_block_read(in_fd, &header, sizeof(header));
+      if (ret != 8) {
+         break;
+      }
 
-    if (ret == 8) {
-        if (!inited) {
-            if (header[1] != VCMD_CREATE_RENDERER) {
-                goto fail;
-            }
-            ret = vtest_create_renderer(in_fd, out_fd, header[0]);
-            inited = true;
-        }
+      if (!inited) {
+         if (header[1] != VCMD_CREATE_RENDERER) {
+            break;
+         }
 
-        vtest_poll();
+         ret = vtest_create_renderer(in_fd, out_fd, header[0]);
+         inited = true;
+         vtest_poll();
+         continue;
+      }
 
-        switch (header[1]) {
-            case VCMD_GET_CAPS:
-                ret = vtest_send_caps();
-                break;
-            case VCMD_RESOURCE_CREATE:
-                ret = vtest_create_resource();
-                break;
-            case VCMD_RESOURCE_UNREF:
-                ret = vtest_resource_unref();
-                break;
-            case VCMD_SUBMIT_CMD:
-                ret = vtest_submit_cmd(header[0]);
-                break;
-            case VCMD_TRANSFER_GET:
-                ret = vtest_transfer_get(header[0]);
-                break;
-            case VCMD_TRANSFER_PUT:
-                ret = vtest_transfer_put(header[0]);
-                break;
-            case VCMD_RESOURCE_BUSY_WAIT:
-                vtest_renderer_create_fence();
-                ret = vtest_resource_busy_wait();
-                break;
-            default:
-                break;
-        }
+      vtest_poll();
 
-        if (ret < 0) {
-            goto fail;
-        }
+      if (header[1] <= 0 || header[1] > COMMAND_COUNT) {
+         break;
+      }
 
-        goto again;
-    }
-    if (ret <= 0) {
-        goto fail;
-    }
-fail:
-    fprintf(stderr, "socket failed - closing renderer\n");
-    vtest_destroy_renderer();
-    close(in_fd);
-    return 0;
+      if (header[1] == VCMD_RESOURCE_BUSY_WAIT) { //Only specific case
+         vtest_renderer_create_fence();
+      }
+      ret = _commands_ftable[header[1]](header[0]);
+
+      if (ret < 0) {
+         break;
+      }
+   } while (1);
+
+   fprintf(stderr, "socket failed - closing renderer\n");
+   vtest_destroy_renderer();
+   close(in_fd);
+   return 0;
 }
+
+#undef COMMAND_COUNT
 
 int main(int argc, char **argv)
 {
