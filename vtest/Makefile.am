@@ -22,4 +22,8 @@ virgl_test_server_SOURCES =			\
 	vtest_protocol.h			\
 	vtest.h
 
+if WITH_VULKAN
+virgl_test_server_SOURCES +=			\
+	vtest_vk.c
+endif
 virgl_test_server_LDADD = $(top_builddir)/src/libvirglrenderer.la

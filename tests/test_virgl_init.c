@@ -35,6 +35,7 @@
 #include <sys/uio.h>
 #include "testvirgl.h"
 #include "virgl_hw.h"
+
 struct myinfo_struct {
   uint32_t test;
 };

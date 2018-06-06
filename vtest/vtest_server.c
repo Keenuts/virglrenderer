@@ -33,8 +33,10 @@
 #include <fcntl.h>
 
 #include "util.h"
+#include "util/macro.h"
 #include "vtest.h"
 #include "vtest_protocol.h"
+#include "vtest_vk.h"
 
 static int vtest_open_socket(const char *path)
 {
@@ -96,61 +98,77 @@ static int (*_commands_ftable[])(uint32_t header) = {
     vtest_submit_cmd,
     vtest_resource_busy_wait,
     NULL /* vtest_create_renderer */,
+#ifdef WITH_VULKAN
+    vtest_vk_allocate,
+#endif
 };
-#define COMMAND_COUNT (sizeof(_commands_ftable) / sizeof(*_commands_ftable))
+
+#define PRINT_ERROR(Msg, ...) \
+   fprintf(stderr, "%s: " Msg "\n", __func__, ##__VA_ARGS__)
+
+static const int (*vtest_commands[])(uint32_t length_dw) = {
+    NULL /* CMD ids starts at 1 */,
+    vtest_send_caps,
+    vtest_create_resource,
+    vtest_resource_unref,
+    vtest_transfer_get,
+    vtest_transfer_put,
+    vtest_submit_cmd,
+    vtest_resource_busy_wait,
+    NULL /* vtest_create_renderer */,
+};
 
 static int run_renderer(int in_fd, int out_fd)
 {
-   int ret;
-   uint32_t header[VTEST_HDR_SIZE];
-   bool inited = false;
 
-   do {
-again:
-      ret = vtest_wait_for_fd_read(in_fd);
-      if (ret < 0) {
-         break;
-      }
+    int ret;
+    uint32_t header[VTEST_HDR_SIZE];
+    bool initialized = false;
 
-      ret = vtest_block_read(in_fd, &header, sizeof(header));
-      if (ret != 8) {
-         break;
-      }
-
-      if (!inited) {
-         if (header[1] != VCMD_CREATE_RENDERER) {
+    do {
+        ret = vtest_wait_for_fd_read(in_fd);
+        if (ret < 0) {
             break;
-         }
+        }
 
-         ret = vtest_create_renderer(in_fd, out_fd, header[0]);
-         inited = true;
-         vtest_poll();
-         continue;
-      }
+        ret = vtest_block_read(in_fd, &header, sizeof(header));
+        if (ret < sizeof(header)) {
+            break;
+        }
 
-      vtest_poll();
+        if (!initialized) {
+            /* The first command MUST be VCMD_CREATE_RENDERER */
+            if (header[1] != VCMD_CREATE_RENDERER) {
+                break;
+            }
 
-      if (header[1] <= 0 || header[1] > COMMAND_COUNT) {
-         break;
-      }
+            ret = vtest_create_renderer(in_fd, out_fd, header[0]);
+            initialized = true;
+            vtest_poll();
+            continue;
+        }
 
-      if (header[1] == VCMD_RESOURCE_BUSY_WAIT) { //Only specific case
-         vtest_renderer_create_fence();
-      }
-      ret = _commands_ftable[header[1]](header[0]);
+        vtest_poll();
+        if (header[1] <= 0 || header[1] > ARRAY_SIZE(vtest_commands)) {
+            break;
+        }
 
-      if (ret < 0) {
-         break;
-      }
-   } while (1);
+        if (vtest_commands[header[1]] == NULL) {
+            break;
+        }
 
-   fprintf(stderr, "socket failed - closing renderer\n");
-   vtest_destroy_renderer();
-   close(in_fd);
-   return 0;
+        ret = vtest_commands[header[1]](header[0]);
+        if (ret < 0) {
+            break;
+        }
+    } while (1);
+
+    fprintf(stderr, "socket failed - closing renderer\n");
+
+    vtest_destroy_renderer();
+    close(in_fd);
+    return 0;
 }
-
-#undef COMMAND_COUNT
 
 int main(int argc, char **argv)
 {
@@ -160,72 +178,72 @@ int main(int argc, char **argv)
     struct sigaction sa;
 
 #ifdef __AFL_LOOP
-while (__AFL_LOOP(1000)) {
+    while (__AFL_LOOP(1000)) {
 #endif
 
-   if (argc > 1) {
-      if (!strcmp(argv[1], "--no-fork"))
-	do_fork = false;
-      else {
-         ret = open(argv[1], O_RDONLY);
-         if (ret == -1) {
-            perror(0);
-            exit(1);
-         }
-         in_fd = ret;
-         ret = open("/dev/null", O_WRONLY);
-         if (ret == -1) {
-            perror(0);
-            exit(1);
-         }
-         out_fd = ret;
-         loop = false;
-         do_fork = false;
-         goto start;
-      }
-    }
+        if (argc > 1) {
+            if (!strcmp(argv[1], "--no-fork"))
+                do_fork = false;
+            else {
+                ret = open(argv[1], O_RDONLY);
+                if (ret == -1) {
+                    perror(0);
+                    exit(1);
+                }
+                in_fd = ret;
+                ret = open("/dev/null", O_WRONLY);
+                if (ret == -1) {
+                    perror(0);
+                    exit(1);
+                }
+                out_fd = ret;
+                loop = false;
+                do_fork = false;
+                goto start;
+            }
+        }
 
-    if (do_fork) {
-      sa.sa_handler = SIG_IGN;
-      sigemptyset(&sa.sa_mask);
-      sa.sa_flags = 0;
-      if (sigaction(SIGCHLD, &sa, 0) == -1) {
-	perror(0);
-	exit(1);
-      }
-    }
+        if (do_fork) {
+            sa.sa_handler = SIG_IGN;
+            sigemptyset(&sa.sa_mask);
+            sa.sa_flags = 0;
+            if (sigaction(SIGCHLD, &sa, 0) == -1) {
+                perror(0);
+                exit(1);
+            }
+        }
 
-    sock = vtest_open_socket("/tmp/.virgl_test");
+        sock = vtest_open_socket("/tmp/.virgl_test");
 restart:
-    in_fd = wait_for_socket_accept(sock);
-    out_fd = in_fd;
+        in_fd = wait_for_socket_accept(sock);
+        out_fd = in_fd;
 
 start:
-    if (do_fork) {
-      /* fork a renderer process */
-      switch ((pid = fork())) {
-      case 0:
-        run_renderer(in_fd, out_fd);
-	exit(0);
-	break;
-      case -1:
-      default:
-	close(in_fd);
-        if (loop)
-           goto restart;
-      }
-    } else {
-      run_renderer(in_fd, out_fd);
-      if (loop)
-         goto restart;
-    }
+        if (do_fork) {
+            /* fork a renderer process */
+            switch ((pid = fork())) {
+                case 0:
+                    run_renderer(in_fd, out_fd);
+                    exit(0);
+                    break;
+                case -1:
+                default:
+                    close(in_fd);
+                    if (loop)
+                        goto restart;
+            }
+        } else {
+            run_renderer(in_fd, out_fd);
+            if (loop)
+                goto restart;
+        }
 
-    if (sock != -1)
-       close(sock);
-    if (in_fd != out_fd)
-       close(out_fd);
+        if (sock != -1)
+            close(sock);
+        if (in_fd != out_fd)
+            close(out_fd);
 
 #ifdef __AFL_LOOP
-}
+    }
 #endif
 }
