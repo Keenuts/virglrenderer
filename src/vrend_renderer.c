@@ -6750,7 +6750,7 @@ void vrend_renderer_fill_caps_gles(uint32_t set, uint32_t version,
    caps->v2.texture_buffer_offset_alignment = 0;
 }
 
-#ifdef VULKAN
+#ifdef WITH_VULKAN
 
 void vrend_renderer_fill_caps_vulkan(union virgl_caps *caps)
 {
@@ -6956,7 +6956,7 @@ void vrend_renderer_fill_caps(uint32_t set, uint32_t version,
 
    caps->v2.tgsi_invariant = 1;
 
-#ifdef VULKAN
+#ifdef WITH_VULKAN
     if (set == 2) {
         vrend_renderer_fill_caps_vulkan(caps);
     }
