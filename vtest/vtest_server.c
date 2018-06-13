@@ -145,7 +145,7 @@ static int run_renderer(int in_fd, int out_fd)
       }
 
       vtest_poll();
-      if (header[1] <= 0 || header[1] > ARRAY_SIZE(vtest_commands)) {
+      if (header[1] <= 0 || header[1] >= ARRAY_SIZE(vtest_commands)) {
          fprintf(stderr, "%s: invalid command index %u.\n", __func__, header[1]);
          break;
       }
