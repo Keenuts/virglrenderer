@@ -50,10 +50,48 @@ int virgl_vk_get_sparse_properties(uint32_t device_id,
 
       vkGetPhysicalDeviceProperties(it->vk_device, &props);
       memcpy(sparse_props, &props.sparseProperties, sizeof(*sparse_props));
+      break;
    }
 
    if (device_id > 0) {
       RETURN(-1);
+   }
+
+   RETURN(0);
+}
+
+int virgl_vk_get_queue_family_properties(uint32_t device_id,
+                                         uint32_t *family_count,
+                                         VkQueueFamilyProperties **props)
+{
+   struct list_physical_device *it = NULL;
+
+   TRACE_IN();
+
+   if (device_id < 0) {
+      RETURN(-1);
+   }
+
+   LIST_FOR_EACH(it, vk_info->physical_devices.list, list) {
+      if (device_id > 0) {
+         device_id -= 1;
+         continue;
+      }
+
+      vkGetPhysicalDeviceQueueFamilyProperties(it->vk_device,
+                                               family_count,
+                                               NULL);
+
+      *props = malloc(sizeof(VkQueueFamilyProperties) * *family_count);
+      if (*props == NULL) {
+         *family_count = 0;
+         RETURN(-1);
+      }
+
+      vkGetPhysicalDeviceQueueFamilyProperties(it->vk_device,
+                                               family_count,
+                                               *props);
+      break;
    }
 
    RETURN(0);

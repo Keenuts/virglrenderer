@@ -105,6 +105,7 @@ static const int (*vtest_commands[])(uint32_t length_dw) = {
     vtest_vk_create_device,
     vtest_vk_enumerate_devices,
     vtest_vk_get_sparse_properties,
+    vtest_vk_get_queue_family_properties,
 #endif
 };
 
