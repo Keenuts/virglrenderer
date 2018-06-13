@@ -119,34 +119,10 @@ int vtest_create_renderer(int in_fd, int out_fd, uint32_t length)
 
    ret = vtest_block_read(renderer.in_fd, vtestname, length);
    if (ret != length) {
-      ret = -1;
-      goto end;
-   }
-
-   ret = virgl_renderer_init(&renderer, 0, &vtest_cbs);
-
-#ifdef WITH_VULKAN
-   ret = 0;
-#else
-   ctx = VIRGL_RENDERER_USE_EGL;
-
-   if (getenv("VTEST_USE_GLX"))
-      ctx = VIRGL_RENDERER_USE_GLX;
-
-   ret = virgl_renderer_init(&renderer,
-         ctx | VIRGL_RENDERER_THREAD_SYNC, &vtest_cbs);
-   if (ret) {
-      fprintf(stderr, "%s: failed to initialise renderer.\n", __func__);
       return -1;
    }
 
-   ret = virgl_renderer_context_create(ctx_id, strlen(vtestname), vtestname);
-
-#endif
-
-end:
-   free(vtestname);
-   return ret;
+   return virgl_renderer_init(&renderer, 0, &vtest_cbs);
 }
 
 void vtest_destroy_renderer(void)

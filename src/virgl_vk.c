@@ -1,5 +1,6 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <vulkan/vulkan.h>
 
 #include "util/macro.h"
@@ -87,7 +88,10 @@ static void dump_available_layers(void)
 
 static int init_physical_devices(struct virgl_vk *state)
 {
+   TRACE_IN();
+
    uint32_t device_count;
+   struct list_physical_device *node = NULL;
    VkPhysicalDevice *devices = NULL;
 
    list_init(&state->physical_devices.list);
@@ -96,18 +100,25 @@ static int init_physical_devices(struct virgl_vk *state)
 
    if (device_count == 0) {
       fprintf(stderr, "No device supports Vulkan.\n");
-      return -1;
+      RETURN(-1);
    }
 
    devices = malloc(sizeof(*devices) * device_count);
    if (devices == NULL) {
-      return -1;
+      RETURN(-1);
    }
 
    CALL_VK(vkEnumeratePhysicalDevices, (state->vk_instance, &device_count, devices));
 
-   UNUSED_PARAMETER(state);
-   return 0;
+   for (uint32_t i = 0; i < device_count; i++) {
+       node = malloc(sizeof(*node));
+       memcpy(&node->vk_device, devices + i, sizeof(*devices));
+
+       list_append(&state->physical_devices.list, &node->list);
+   }
+
+   free(devices);
+   RETURN(0);
 }
 
 struct virgl_vk* virgl_vk_init()
@@ -151,11 +162,8 @@ struct virgl_vk* virgl_vk_init()
          break;
       }
 
-      fprintf(stderr, "Vulkan renderer initialized\n");
-
       /* success path */
       RETURN(state);
-
    } while (0);
 
    /* failure branch */

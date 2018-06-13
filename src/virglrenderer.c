@@ -301,16 +301,18 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
 
    TRACE_IN();
 
-   if (!cookie || !cbs)
+   if (!cookie || !cbs) {
       RETURN(-1);
+   }
 
-   if (cbs->version != 1)
+   if (cbs->version != 1) {
       RETURN(-1);
+   }
 
    dev_cookie = cookie;
    rcbs = cbs;
 
-#ifndef WITH_VULKAN
+#ifdef WITH_VULKAN
    vk_info = virgl_vk_init();
    if (!vk_info)
       RETURN(-1);
@@ -318,7 +320,6 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
 
    RETURN(0);
 #else
-
    if (flags & VIRGL_RENDERER_USE_EGL) {
    #ifdef HAVE_EPOXY_EGL_H
       egl_info = virgl_egl_init();
@@ -345,7 +346,6 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
       renderer_flags |= VREND_USE_THREAD_SYNC;
 
    return vrend_renderer_init(&virgl_cbs, renderer_flags);
-
 #endif
 }
 
