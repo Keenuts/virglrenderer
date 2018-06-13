@@ -52,7 +52,7 @@
 /* 0 length cmd */
 /* resp VCMD_GET_CAPS + caps */
 
-#define VCMD_VK_ALLOCATE 9
+#define VCMD_VK_CREATE_DEVICE 9
 
 #define VCMD_RES_CREATE_SIZE 10
 #define VCMD_RES_CREATE_RES_HANDLE 0

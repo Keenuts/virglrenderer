@@ -106,42 +106,47 @@ int vtest_block_read(int fd, void *buf, int size)
 
 int vtest_create_renderer(int in_fd, int out_fd, uint32_t length)
 {
-    char *vtestname;
-    int ret;
+   TRACE_IN();
+   char *vtestname;
+   int ret, ctx;
+
+   renderer.in_fd = in_fd;
+   renderer.out_fd = out_fd;
+
+   vtestname = calloc(1, length + 1);
+   if (!vtestname)
+      return -1;
+
+   ret = vtest_block_read(renderer.in_fd, vtestname, length);
+   if (ret != length) {
+      ret = -1;
+      goto end;
+   }
+
+   ret = virgl_renderer_init(&renderer, 0, &vtest_cbs);
+
 #ifdef WITH_VULKAN
-    int ctx = VIRGL_RENDERER_USE_VK;
+   ret = 0;
 #else
-    int ctx = VIRGL_RENDERER_USE_EGL;
+   ctx = VIRGL_RENDERER_USE_EGL;
+
+   if (getenv("VTEST_USE_GLX"))
+      ctx = VIRGL_RENDERER_USE_GLX;
+
+   ret = virgl_renderer_init(&renderer,
+         ctx | VIRGL_RENDERER_THREAD_SYNC, &vtest_cbs);
+   if (ret) {
+      fprintf(stderr, "%s: failed to initialise renderer.\n", __func__);
+      return -1;
+   }
+
+   ret = virgl_renderer_context_create(ctx_id, strlen(vtestname), vtestname);
+
 #endif
 
-    renderer.in_fd = in_fd;
-    renderer.out_fd = out_fd;
-
-    if (getenv("VTEST_USE_GLX"))
-       ctx = VIRGL_RENDERER_USE_GLX;
-
-    ret = virgl_renderer_init(&renderer,
-                              ctx | VIRGL_RENDERER_THREAD_SYNC, &vtest_cbs);
-    if (ret) {
-      fprintf(stderr, "failed to initialise renderer.\n");
-      return -1;
-    }
-
-    vtestname = calloc(1, length + 1);
-    if (!vtestname)
-      return -1;
-
-    ret = vtest_block_read(renderer.in_fd, vtestname, length);
-    if (ret != length) {
-       ret = -1;
-       goto end;
-    }
-
-    ret = virgl_renderer_context_create(ctx_id, strlen(vtestname), vtestname);
-
 end:
-    free(vtestname);
-    return ret;
+   free(vtestname);
+   return ret;
 }
 
 void vtest_destroy_renderer(void)

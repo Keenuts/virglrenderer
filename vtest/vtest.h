@@ -24,6 +24,8 @@
 #ifndef VTEST_H
 #define VTEST_H
 
+#define UNUSED_PARAMETER(Param) (void)(Param)
+
 #include <errno.h>
 int vtest_create_renderer(int in_fd, int out_fd, uint32_t length);
 
@@ -48,6 +50,11 @@ void vtest_destroy_renderer(void);
 struct vtest_renderer {
   int in_fd;
   int out_fd;
+};
+
+struct vtest_result {
+   uint32_t error_code;
+   uint32_t result;
 };
 
 extern struct vtest_renderer renderer;

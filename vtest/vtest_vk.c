@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <vulkan/vulkan.h>
 
-#include "vtest_protocol.h"
+#include "virglrenderer_vulkan.h"
+#include "util/macro.h"
 #include "vtest.h"
+#include "vtest_protocol.h"
 #include "vtest_vk.h"
 
 extern struct vtest_renderer renderer;
@@ -11,44 +13,49 @@ extern struct vtest_renderer renderer;
 #define LOAD_UINT64(Buffer, Offset) \
    ((uint64_t)Buffer[Offset + 1] << 32 | (uint64_t)Buffer[Offset])
 
-int vtest_vk_allocate(uint32_t header_len)
+int vtest_vk_create_device(uint32_t length_dw)
 {
-   int ret;
-   uint32_t buffer[VCMD_VK_ALLOCATE_SIZE];
-   VkResult res;
+   const float priorities[] = { 0.f };
+   int res;
+   struct vtest_result result;
+   uint32_t id;
 
-   ret = vtest_block_read(renderer.in_fd, buffer, sizeof(buffer));
+   TRACE_IN();
+   UNUSED_PARAMETER(length_dw);
 
-   if (ret != sizeof(buffer)) {
-      return -1;
+   VkDeviceQueueCreateInfo queue_info  = {
+      VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+      NULL,
+      0,
+      0,
+      1,
+      priorities
+   };
+
+   VkDeviceCreateInfo info = {
+      VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+      NULL,
+      0,
+      1,
+      &queue_info,
+      0,
+      NULL,
+      0,
+      NULL,
+      NULL
+   };
+   //FIXME: device id
+   id = virgl_vk_create_device(0, info);
+
+   result.error_code = 0;
+   result.result = id;
+
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   if (res < sizeof(res)) {
+      fprintf(stderr, "%s: failed to write back the answer.\n", __func__);
+      RETURN(-1);
+
    }
 
-   VkDevice device = (VkDevice)LOAD_UINT64(buffer, VCMD_VK_ALLOCATE_P_DEVICE_ID);
-   uint64_t size = LOAD_UINT64(buffer, VCMD_VK_ALLOCATE_P_SIZE);
-
-   VkMemoryAllocateInfo info = {
-      VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-      NULL,
-      size,
-      buffer[VCMD_VK_ALLOCATE_P_MEM_INDEX],
-   };
-
-   printf("calling VK with:\t%p\n \t0x%x\n \t0x%x\n", device,
-          info.allocationSize, info.memoryTypeIndex);
-
-   abort();
-
-   VkDeviceMemory vk_memory;
-   res = vkAllocateMemory(device, &info, NULL, &vk_memory);
-   printf("Vk returned %d\n", res);
-
-   uint32_t result[] = {
-      res,
-      (uint64_t)vk_memory & 0xFFFFFFFFUL,
-      (uint64_t)vk_memory >> 32,
-   };
-
-   vtest_block_write(renderer.in_fd, result, sizeof(result));
-
-   return 0;
+   RETURN(0);
 }

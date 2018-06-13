@@ -88,86 +88,86 @@ static int wait_for_socket_accept(int sock)
     return -1;
 }
 
-static int (*_commands_ftable[])(uint32_t header) = {
-    NULL /* CMD ids starts at 1 */,
-    vtest_send_caps,
-    vtest_create_resource,
-    vtest_resource_unref,
-    vtest_transfer_get,
-    vtest_transfer_put,
-    vtest_submit_cmd,
-    vtest_resource_busy_wait,
-    NULL /* vtest_create_renderer */,
-#ifdef WITH_VULKAN
-    vtest_vk_allocate,
-#endif
-};
-
 #define PRINT_ERROR(Msg, ...) \
    fprintf(stderr, "%s: " Msg "\n", __func__, ##__VA_ARGS__)
 
 static const int (*vtest_commands[])(uint32_t length_dw) = {
     NULL /* CMD ids starts at 1 */,
-    vtest_send_caps,
-    vtest_create_resource,
-    vtest_resource_unref,
-    vtest_transfer_get,
-    vtest_transfer_put,
-    vtest_submit_cmd,
-    vtest_resource_busy_wait,
+    NULL /* vtest_send_caps */,
+    NULL /* vtest_create_resource */,
+    NULL /* vtest_resource_unref */,
+    NULL /* vtest_transfer_get */,
+    NULL /* vtest_transfer_put */,
+    NULL /* vtest_submit_cmd */,
+    NULL /* vtest_resource_busy_wait */,
     NULL /* vtest_create_renderer */,
+#ifdef WITH_VULKAN
+    vtest_vk_create_device,
+#endif
 };
 
 static int run_renderer(int in_fd, int out_fd)
 {
+   int ret;
+   uint32_t header[VTEST_HDR_SIZE];
+   int initialized = 0;
 
-    int ret;
-    uint32_t header[VTEST_HDR_SIZE];
-    bool initialized = false;
+   TRACE_IN();
 
-    do {
-        ret = vtest_wait_for_fd_read(in_fd);
-        if (ret < 0) {
+   do {
+      ret = vtest_wait_for_fd_read(in_fd);
+      if (ret < 0) {
+         fprintf(stderr, "%s: invalid read (%d).\n", __func__, ret);
+         break;
+      }
+
+      ret = vtest_block_read(in_fd, &header, sizeof(header));
+      if (ret < sizeof(header)) {
+         fprintf(stderr, "%s: invalid command header %d.\n", __func__, ret);
+         break;
+      }
+
+      printf("%s: command received (%u).\n", __func__, header[1]);
+
+      if (!initialized) {
+         /* The first command MUST be VCMD_CREATE_RENDERER */
+         if (header[1] != VCMD_CREATE_RENDERER) {
+            fprintf(stderr, "%s: first command MUST be VCMD_CREATE_RENDERER got %u\n",
+                    __func__, header[1]);
             break;
-        }
+         }
 
-        ret = vtest_block_read(in_fd, &header, sizeof(header));
-        if (ret < sizeof(header)) {
-            break;
-        }
+         ret = vtest_create_renderer(in_fd, out_fd, header[0]);
+         initialized = 1;
+         vtest_poll();
+         printf("%s: vtest initialized.\n", __func__);
+         continue;
+      }
 
-        if (!initialized) {
-            /* The first command MUST be VCMD_CREATE_RENDERER */
-            if (header[1] != VCMD_CREATE_RENDERER) {
-                break;
-            }
+      vtest_poll();
+      if (header[1] <= 0 || header[1] > ARRAY_SIZE(vtest_commands)) {
+         fprintf(stderr, "%s: invalid command index %u.\n", __func__, header[1]);
+         break;
+      }
 
-            ret = vtest_create_renderer(in_fd, out_fd, header[0]);
-            initialized = true;
-            vtest_poll();
-            continue;
-        }
+      if (vtest_commands[header[1]] == NULL) {
+         fprintf(stderr, "%s: command index %u is not active.\n", __func__, header[1]);
+         break;
+      }
 
-        vtest_poll();
-        if (header[1] <= 0 || header[1] > ARRAY_SIZE(vtest_commands)) {
-            break;
-        }
+      ret = vtest_commands[header[1]](header[0]);
+      if (ret != 0) {
+         fprintf(stderr, "%s: command %u failed (%u).\n", __func__, header[1], ret);
+         break;
+      }
+   } while (1);
 
-        if (vtest_commands[header[1]] == NULL) {
-            break;
-        }
+   fprintf(stderr, "socket failed - closing renderer\n");
 
-        ret = vtest_commands[header[1]](header[0]);
-        if (ret < 0) {
-            break;
-        }
-    } while (1);
+   vtest_destroy_renderer();
+   close(in_fd);
 
-    fprintf(stderr, "socket failed - closing renderer\n");
-
-    vtest_destroy_renderer();
-    close(in_fd);
-    return 0;
+   RETURN(0);
 }
 
 int main(int argc, char **argv)
