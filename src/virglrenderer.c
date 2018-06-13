@@ -34,6 +34,7 @@
 #include "pipe/p_state.h"
 #include "util/u_format.h"
 #include "util/u_math.h"
+#include "util/macro.h"
 #include "vrend_renderer.h"
 
 #include "virglrenderer.h"
@@ -50,7 +51,7 @@ static struct virgl_glx *glx_info;
 
 #ifdef WITH_VULKAN
 #include "virgl_vk.h"
-static struct virgl_vk *vk_info;
+struct virgl_vk *vk_info;
 #endif
 
 enum {
@@ -297,51 +298,55 @@ void virgl_renderer_cleanup(void *cookie)
 int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks *cbs)
 {
    uint32_t renderer_flags = 0;
+
+   TRACE_IN();
+
    if (!cookie || !cbs)
-      return -1;
+      RETURN(-1);
 
    if (cbs->version != 1)
-      return -1;
+      RETURN(-1);
 
    dev_cookie = cookie;
    rcbs = cbs;
 
+#ifndef WITH_VULKAN
+   vk_info = virgl_vk_init();
+   if (!vk_info)
+      RETURN(-1);
+   use_context = CONTEXT_VK;
+
+   RETURN(0);
+#else
+
    if (flags & VIRGL_RENDERER_USE_EGL) {
-#ifdef HAVE_EPOXY_EGL_H
+   #ifdef HAVE_EPOXY_EGL_H
       egl_info = virgl_egl_init();
       if (!egl_info)
          return -1;
       use_context = CONTEXT_EGL;
-#else
+   #else
       fprintf(stderr, "EGL is not supported on this platform\n");
       return -1;
-#endif
+   #endif
    } else if (flags & VIRGL_RENDERER_USE_GLX) {
-#ifdef HAVE_EPOXY_GLX_H
+   #ifdef HAVE_EPOXY_GLX_H
       glx_info = virgl_glx_init();
       if (!glx_info)
          return -1;
       use_context = CONTEXT_GLX;
-#else
+   #else
       fprintf(stderr, "GLX is not supported on this platform\n");
       return -1;
-#endif
-   } else if (flags & VIRGL_RENDERER_USE_VK) {
-#ifdef WITH_VULKAN
-      vk_info = virgl_vk_init();
-      if (!vk_info)
-         return -1;
-      use_context = CONTEXT_VK;
-#else
-      fprintf(stderr, "Vulkan is not supported on this platform\n");
-      return -1;
-#endif
+   #endif
    }
 
    if (flags & VIRGL_RENDERER_THREAD_SYNC)
       renderer_flags |= VREND_USE_THREAD_SYNC;
 
    return vrend_renderer_init(&virgl_cbs, renderer_flags);
+
+#endif
 }
 
 int virgl_renderer_get_fd_for_texture(uint32_t tex_id, int *fd)
