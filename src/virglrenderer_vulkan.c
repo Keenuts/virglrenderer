@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include "virgl_vk.h"
+#include "util/macros.h"
 
 uint32_t virgl_vk_create_device(uint32_t device_id, VkDeviceCreateInfo info)
 {

@@ -33,7 +33,7 @@
 #include <fcntl.h>
 
 #include "util.h"
-#include "util/macro.h"
+#include "util/macros.h"
 #include "vtest.h"
 #include "vtest_protocol.h"
 #include "vtest_vk.h"

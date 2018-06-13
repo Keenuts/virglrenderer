@@ -30,7 +30,7 @@
 #include <unistd.h>
 
 #include "util.h"
-#include "util/macro.h"
+#include "util/macros.h"
 #include "virglrenderer.h"
 #include "vtest.h"
 #include "vtest_protocol.h"

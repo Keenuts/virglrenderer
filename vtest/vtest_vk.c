@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.h>
 
 #include "virglrenderer_vulkan.h"
-#include "util/macro.h"
+#include "util/macros.h"
 #include "vtest.h"
 #include "vtest_protocol.h"
 #include "vtest_vk.h"

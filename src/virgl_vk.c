@@ -3,7 +3,7 @@
 #include <string.h>
 #include <vulkan/vulkan.h>
 
-#include "util/macro.h"
+#include "util/macros.h"
 #include "virgl_vk.h"
 
 static const char* vkresult_to_string(VkResult res)
