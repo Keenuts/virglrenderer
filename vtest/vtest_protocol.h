@@ -94,4 +94,8 @@
 #define VCMD_VK_ALLOCATE_P_SIZE 2
 #define VCMD_VK_ALLOCATE_P_MEM_INDEX 4
 
+struct vtest_payload_device_get {
+   uint32_t device_id;
+};
+
 #endif
