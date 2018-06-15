@@ -102,10 +102,10 @@ static const int (*vtest_commands[])(uint32_t length_dw) = {
     NULL /* vtest_resource_busy_wait */,
     NULL /* vtest_create_renderer */,
 #ifdef WITH_VULKAN
-    vtest_vk_create_device,
     vtest_vk_enumerate_devices,
     vtest_vk_get_sparse_properties,
     vtest_vk_get_queue_family_properties,
+    vtest_vk_create_device,
 #endif
 };
 

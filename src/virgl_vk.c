@@ -95,6 +95,7 @@ static int init_physical_devices(struct virgl_vk *state)
    VkPhysicalDevice *devices = NULL;
 
    list_init(&state->physical_devices.list);
+   list_init(&state->devices.list);
 
    CALL_VK(vkEnumeratePhysicalDevices, (state->vk_instance, &device_count, NULL));
 

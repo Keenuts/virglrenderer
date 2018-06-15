@@ -24,6 +24,8 @@
 #ifndef VTEST_PROTOCOL
 #define VTEST_PROTOCOL
 
+#include <vulkan/vulkan.h>
+
 #define VTEST_DEFAULT_SOCKET_NAME "/tmp/.virgl_test"
 
 /* 32-bit length field */
@@ -52,10 +54,10 @@
 /* 0 length cmd */
 /* resp VCMD_GET_CAPS + caps */
 
-#define VCMD_VK_CREATE_DEVICE 9
-#define VCMD_VK_ENUMERATE_PHYSICAL_DEVICES 10
-#define VCMD_VK_GET_PHYSICAL_DEVICE_SPARCE_PROPERTIES 11
-#define VCMD_VK_GET_QUEUE_FAMILY_PROPS 12
+#define VCMD_VK_ENUMERATE_PHYSICAL_DEVICES 9
+#define VCMD_VK_GET_PHYSICAL_DEVICE_SPARCE_PROPERTIES 10
+#define VCMD_VK_GET_QUEUE_FAMILY_PROPS 11
+#define VCMD_VK_CREATE_DEVICE 12
 
 #define VCMD_RES_CREATE_SIZE 10
 #define VCMD_RES_CREATE_RES_HANDLE 0
@@ -97,8 +99,28 @@
 #define VCMD_VK_ALLOCATE_P_SIZE 2
 #define VCMD_VK_ALLOCATE_P_MEM_INDEX 4
 
+struct vtest_result {
+   uint32_t error_code;
+   uint32_t result;
+};
+
 struct vtest_payload_device_get {
    uint32_t device_id;
+};
+
+struct vtest_payload_queue_create {
+   VkDeviceQueueCreateFlags flags;
+   uint32_t queue_family_index;
+   uint32_t queue_count;
+   float priorities[];
+};
+
+struct vtest_payload_device_create {
+   uint32_t physical_device_id;
+   VkDeviceCreateFlags flags;
+   VkPhysicalDeviceFeatures features;
+
+   uint32_t queue_info_count;
 };
 
 #endif

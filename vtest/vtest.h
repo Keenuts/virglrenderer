@@ -52,10 +52,5 @@ struct vtest_renderer {
   int out_fd;
 };
 
-struct vtest_result {
-   uint32_t error_code;
-   uint32_t result;
-};
-
 extern struct vtest_renderer renderer;
 #endif

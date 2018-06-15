@@ -9,10 +9,20 @@ struct list_physical_device {
    VkPhysicalDevice vk_device;
 };
 
+struct list_device {
+   struct list list;
+
+   VkDevice vk_device;
+
+   uint32_t queue_count;
+   VkQueue *queues;
+};
+
 struct virgl_vk {
    VkInstance vk_instance;
 
    struct list_physical_device physical_devices;
+   struct list_device devices;
 };
 
 extern struct virgl_vk *vk_info;
