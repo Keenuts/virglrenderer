@@ -70,20 +70,13 @@ static void dump_available_layers(void)
       return;
    }
 
-   VkLayerProperties *layers = malloc(sizeof(*layers) * layer_count);
-   if (layers == NULL) {
-      abort();
-   }
-
-
+   VkLayerProperties *layers = alloca(sizeof(*layers) * layer_count);
    CALL_VK(vkEnumerateInstanceLayerProperties, (&layer_count, layers));
 
    fprintf(stderr, "layers:\n");
    for (uint32_t i = 0; i < layer_count; i++) {
       fprintf(stderr, "\t%s: %s\n", layers[i].layerName, layers[i].description);
    }
-
-   free(layers);
 }
 
 static int init_physical_devices(struct virgl_vk *state)
