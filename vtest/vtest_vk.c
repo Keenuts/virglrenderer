@@ -131,7 +131,7 @@ int vtest_vk_create_device(uint32_t length_dw)
    memcpy(&features, &create_info.features, sizeof(features));
 
    /* Now, for each queue, we need to extract the informations */
-   vk_device_info.pQueueCreateInfos = malloc(sizeof(VkDeviceQueueCreateInfo) *
+   vk_device_info.pQueueCreateInfos = alloca(sizeof(VkDeviceQueueCreateInfo) *
                                            create_info.queue_info_count);
    if (vk_device_info.pQueueCreateInfos == NULL) {
       RETURN(-1);
@@ -149,8 +149,9 @@ int vtest_vk_create_device(uint32_t length_dw)
       vk_queue_info->flags = queue_info.flags;
       vk_queue_info->queueFamilyIndex = queue_info.queue_family_index;
       vk_queue_info->queueCount = queue_info.queue_count;
+      vk_queue_info->pQueuePriorities = alloca(sizeof(float) * queue_info.queue_count);
 
-      vtest_block_read(renderer.in_fd, &vk_queue_info->pQueuePriorities,
+      vtest_block_read(renderer.in_fd, (float*)vk_queue_info->pQueuePriorities,
                        sizeof(float) * queue_info.queue_count);
       CHECK_IO_RESULT(res, sizeof(float) * queue_info.queue_count);
    }
