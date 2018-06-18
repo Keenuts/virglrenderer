@@ -15,7 +15,7 @@ int virgl_vk_get_device_count(uint32_t *device_count)
 
    TRACE_IN();
 
-   *device_count = list_length(&vk_info->physical_devices.list);
+   *device_count = vk_info->physical_device_count;
 
    RETURN(0);
 }
@@ -24,28 +24,15 @@ int virgl_vk_get_sparse_properties(uint32_t device_id,
                                    VkPhysicalDeviceSparseProperties *sparse_props)
 {
    struct VkPhysicalDeviceProperties props;
-   struct list_physical_device *it = NULL;
 
    TRACE_IN();
 
-   if (device_id < 0) {
+   if (device_id < 0 || device_id >= vk_info->physical_device_count) {
       RETURN(-1);
    }
 
-   LIST_FOR_EACH(it, vk_info->physical_devices.list, list) {
-      if (device_id > 0) {
-         device_id -= 1;
-         continue;
-      }
-
-      vkGetPhysicalDeviceProperties(it->vk_device, &props);
-      memcpy(sparse_props, &props.sparseProperties, sizeof(*sparse_props));
-      break;
-   }
-
-   if (device_id > 0) {
-      RETURN(-1);
-   }
+   vkGetPhysicalDeviceProperties(vk_info->physical_devices[device_id], &props);
+   memcpy(sparse_props, &props.sparseProperties, sizeof(*sparse_props));
 
    RETURN(0);
 }
@@ -53,17 +40,13 @@ int virgl_vk_get_sparse_properties(uint32_t device_id,
 static VkPhysicalDevice get_physical_device(uint32_t id)
 {
    struct list_physical_device *it = NULL;
+   TRACE_IN();
 
-   LIST_FOR_EACH(it, vk_info->physical_devices.list, list) {
-      if (id > 0) {
-         id -= 1;
-         continue;
-      }
-
-      RETURN(it->vk_device);
+   if (id < 0 || id >= vk_info->physical_device_count) {
+      RETURN(VK_NULL_HANDLE);
    }
 
-   RETURN(VK_NULL_HANDLE);
+   RETURN(vk_info->physical_devices[id]);
 }
 
 int virgl_vk_get_queue_family_properties(uint32_t device_id,
@@ -99,6 +82,8 @@ static int initialize_vk_device(VkDevice dev,
    struct list_device *device;
    const VkDeviceQueueCreateInfo *queue_info;
    uint32_t queue_count;
+
+   TRACE_IN();
 
    device = calloc(1, sizeof(*device));
    if (device == NULL) {

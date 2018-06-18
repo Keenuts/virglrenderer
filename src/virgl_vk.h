@@ -4,11 +4,6 @@
 #include <vulkan/vulkan.h>
 #include "util/list.h"
 
-struct list_physical_device {
-   struct list list;
-   VkPhysicalDevice vk_device;
-};
-
 struct list_device {
    struct list list;
 
@@ -21,7 +16,9 @@ struct list_device {
 struct virgl_vk {
    VkInstance vk_instance;
 
-   struct list_physical_device physical_devices;
+   VkPhysicalDevice *physical_devices;
+   uint32_t physical_device_count;
+
    struct list_device devices;
 };
 

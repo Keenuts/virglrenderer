@@ -91,34 +91,25 @@ static int init_physical_devices(struct virgl_vk *state)
    TRACE_IN();
 
    uint32_t device_count;
-   struct list_physical_device *node = NULL;
-   VkPhysicalDevice *devices = NULL;
 
-   list_init(&state->physical_devices.list);
    list_init(&state->devices.list);
 
    CALL_VK(vkEnumeratePhysicalDevices, (state->vk_instance, &device_count, NULL));
-
    if (device_count == 0) {
       fprintf(stderr, "No device supports Vulkan.\n");
       RETURN(-1);
    }
 
-   devices = malloc(sizeof(*devices) * device_count);
-   if (devices == NULL) {
+   state->physical_devices = malloc(sizeof(*state->physical_devices) * device_count);
+   if (state->physical_devices == NULL) {
       RETURN(-1);
    }
 
-   CALL_VK(vkEnumeratePhysicalDevices, (state->vk_instance, &device_count, devices));
+   CALL_VK(vkEnumeratePhysicalDevices, (state->vk_instance,
+                                        &device_count,
+                                        state->physical_devices));
 
-   for (uint32_t i = 0; i < device_count; i++) {
-       node = malloc(sizeof(*node));
-       memcpy(&node->vk_device, devices + i, sizeof(*devices));
-
-       list_append(&state->physical_devices.list, &node->list);
-   }
-
-   free(devices);
+   state->physical_device_count = device_count;
    RETURN(0);
 }
 
@@ -172,17 +163,6 @@ struct virgl_vk* virgl_vk_init()
    RETURN(state);
 }
 
-static void free_device_list(struct list_physical_device head) {
-   uint32_t len = list_length(&head.list);
-   struct list_physical_device *it = NULL;
-
-   for (uint32_t i = 0; i < len; i++) {
-      LIST_FRONT(it, head.list, list);
-      free(it);
-      it = NULL;
-   }
-};
-
 void virgl_vk_destroy(struct virgl_vk **state)
 {
    struct list_physical_device *device_list = NULL;
@@ -193,7 +173,7 @@ void virgl_vk_destroy(struct virgl_vk **state)
       (*state)->vk_instance = VK_NULL_HANDLE;
    }
 
-   free_device_list((*state)->physical_devices);
+   free((*state)->physical_devices);
    free(*state);
    *state = NULL;
 }
