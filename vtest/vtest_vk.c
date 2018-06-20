@@ -165,3 +165,44 @@ int vtest_vk_create_device(uint32_t length_dw)
 
    RETURN(0);
 }
+
+int vtest_vk_create_descriptor_set(uint32_t length_dw)
+{
+   VkDescriptorSetLayoutCreateInfo vk_info;
+
+   int res;
+   struct vtest_payload_descriptor_set_layout layout;
+   struct vtest_payload_descriptor_set_layout_bindings *binding;
+   struct vtest_result result;
+
+   res = vtest_block_read(renderer.in_fd, &layout, sizeof(layout));
+   CHECK_IO_RESULT(res, sizeof(layout));
+
+   vk_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+   vk_info.pNext = NULL;
+   vk_info.flags = layout.flags;
+   vk_info.bindingCount = layout.binding_count;
+   vk_info.pBindings = alloca(sizeof(*vk_info.pBindings) * layout.binding_count);
+
+   for (uint32_t i = 0; i < layout.binding_count; i++) {
+      res = vtest_block_read(renderer.in_fd,
+                             (void*)(vk_info.pBindings + i),
+                             sizeof(*binding));
+      CHECK_IO_RESULT(res, sizeof(*binding));
+   }
+
+   result.error_code = 0;
+   printf("creating descriptor:  \
+					flags: %d\n			\
+					binding count: %d\n", vk_info.flags, vk_info.bindingCount);
+
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   RETURN(0);
+}
+
+int vtest_vk_create_buffer(uint32_t length_dw)
+{
+   return 0;
+}
