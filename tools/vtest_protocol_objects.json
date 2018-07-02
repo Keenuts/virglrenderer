@@ -1,0 +1,52 @@
+[
+   {
+      "function": "vkCreateDescriptorSetLayout",
+      "vgl_function": "vgl_vk_create_descriptor_set_layout",
+      "input": "VkDescriptorSetLayoutCreateInfo",
+      "output": "VkDescriptorSetLayout",
+      "id": "VCMD_VK_CREATE_DESCRIPTOR_LAYOUT",
+
+      "chunks": {
+         "intro": {
+            "parent": null,
+            "content" : [
+               { "name": "flags" },
+               { "name" : "bindingCount" }
+            ]
+         },
+         "pBindings": {
+            "parent": "intro",
+            "count": "bindingCount",
+            "content" : [
+               { "name": "binding" },
+               { "name": "descriptorType" },
+               { "name": "descriptorCount" },
+               { "name": "stageFlags" }
+            ]
+         }
+      }
+   },
+   {
+      "function": "vkCreateBuffer",
+      "vgl_function": "vgl_vk_create_buffer",
+      "input": "VkBufferCreateInfo",
+      "output": "VkBuffer",
+      "id": "VCMD_VK_CREATE_BUFFER",
+
+      "chunks": {
+          "intro": {
+              "parent": null,
+              "content": [
+                { "name": "flags" },
+                {
+                    "name": "size",
+                    "type": "uint64_t"
+                },
+                { "name": "usage" },
+                { "name": "sharingMode" },
+                { "name": "queueFamilyIndexCount" }
+              ]
+          }
+      }
+   }
+]
