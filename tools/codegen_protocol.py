@@ -19,38 +19,159 @@ def indent(size, line):
 def camel_to_snake(name):
     return ''.join([ ("_" + c.lower() if c.isupper() else c) for c in name ])
 
+def spec_get_field_type(spec, struct, field):
+    if struct not in spec:
+        raise Exception("Unknown typename {}".format(struct))
+
+    st = spec[struct]
+
+    print(struct, field)
+
+    for m in st['members']:
+        if m.name == field:
+            print(m.type)
+            return m.type
+    
+    raise Exception("Unknown field {}".format(field))
+    return ""
 
 # Structures
 
 class Component:
-    def __init__(self, name, infos):
+    def __init__(self, spec, name, infos, typename, parent = None):
+        self.spec = spec
         self.name = name
-        self.info = infos
-        self.components = {}
+        self.infos = infos
 
-    def add_subcomponent(self, name, infos):
+        self.components = {}
+        self.parent = parent
+        self.input_typename = typename
+
+        if parent == None:
+            self.output_typename = infos['info_type']
+        else:
+            self.output_typename = spec_get_field_type(self.spec,
+                                                       self.parent.output_typename,
+                                                       self.name)
+
+        if parent == None and typename == None:
+            raise Exception("parent and typename cannot be both NULL")
+
+    def AddSubcomponent(self, name, infos):
         if self.name == infos['parent']:
-            self.components[name] = Component(name, infos)
+            typename = self.input_typename[:-len(self.name)] + name
+            self.components[name] = type(self)(self.spec, name, infos, typename, self)
             return True
 
         for key in self.components:
-            if self.components[key].add_subcomponent(name, infos):
+            if self.components[key].AddSubcomponent(name, infos):
                 return True
 
         return False
 
+    def GetIterator(self):
+        if self.parent == None:
+            return "i"
+        return chr(ord(self.parent.GetIterator()) + 1)
+
+    def GetSizeVar(self):
+        if self.parent.parent == None:
+            return '{}.{}'.format(self.parent.name, self.infos['count'])
+
+        return '{}[{}].{}'.format(self.parent.name, self.parent.parent.GetIterator(),
+            self.infos['count'])
+
     def GetDeclarations(self):
         output = []
+        varname = self.name
 
-        output.append("{} {};".format(self.name, "tmp"))
+        if self.parent == None:
+            output.append("{} {};".format(self.input_typename, varname))
+            return output
+
+        output.append("{} tmp_{};".format(self.input_typename, varname))
+
+        if self.parent.parent == None:
+            prefix = "vk_info"
+        else:
+            prefix = self.parent.name
+        typename = self.output_typename
+        output.append("{} *{} = NULL;".format(typename, varname))
+        output.append("{0} = alloca(sizeof(*{0}) * {1}.{2});".format(
+            varname, prefix, self.infos['count']))
 
         return output
 
-    def GetTransfertCode(self):
+    def GetTransfertCode(self, prefix = None):
+        raise Exception("Component class should not be used directly.")
+        return []
+
+class VtestRecvComponent(Component):
+    def __init__(self, spec, name, infos, parent = None, typename = None):
+        super().__init__(spec, name, infos, parent, typename)
+
+        self.output = infos['handle_type']
+
+    def GetReadCode(self, prefix = None):
+        if prefix == None:
+            storage = self.name
+        else:
+            storage = "tmp_" + self.name
+
+        return [
+            "res = vtest_block_read(renderer.in_fd, &{0}, sizeof({0}));".format(
+                storage),
+            "CHECK_IO_RESULT(res, sizeof({}));".format(storage)
+        ]
+
+    def GetAttributeCopyCode(self, prefix = None):
+        if not 'content' in self.infos:
+            if prefix == None:
+                return [ "vk_info = {0};".format(self.name) ]
+            else:
+                return [ "{0}[{1}] = tmp_{0};".format(
+                        self.name, self.parent.GetIterator()) ]
+
+        output = []
+        if prefix == None:
+            for f in self.infos['content']:
+                output.append("vk_info.{1} = {0}.{1};".format(
+                    self.name, f['name']))
+
+        else:
+            for f in self.infos['content']:
+                output.append("{0}[{1}].{2} = tmp_{0}.{2};".format(
+                    self.name, self.parent.GetIterator(), f['name']))
+        return output
+
+    def GetTransfertCode(self, prefix = None):
         output = []
 
-        output.append("{} = {};".format("tmp", 12))
+        output += self.GetReadCode(prefix)
+        output += self.GetAttributeCopyCode(prefix)
 
+        if len(self.components) == 0:
+            return output
+        output.append("")
+
+        for key in self.components:
+            component = self.components[key]
+            output += component.GetDeclarations()
+            output.append("")
+
+            output.append("for (uint32_t {0} = 0; {0} < {1}; {0}++)".format(
+                self.GetIterator(), component.GetSizeVar()) + " {")
+
+            output += indent(1, component.GetTransfertCode(self.name))
+            output.append("}")
+
+            output.append("")
+
+            if prefix == None:
+                output.append("vk_info.{0} = {0};".format(key))
+            else:
+                output.append("{0}[{1}].{2} = {2};".format(
+                    self.name, self.parent.GetIterator(), key))
         return output
 
 class CodeBlock:
@@ -79,11 +200,12 @@ class CodeBlock:
         return "\n".join(self.GetContent())
 
 class FunctionBlock(CodeBlock):
-    def __init__(self, name, return_value, params):
+    def __init__(self, name, return_value, params, infos):
         super().__init__()
         self.return_value = return_value
         self.name = name
         self.args = params
+        self.infos = infos
 
     def SetComponents(self, components):
         self.components = components
@@ -101,6 +223,12 @@ class FunctionBlock(CodeBlock):
         output.append(")")
         return output
 
+    def GetProlog(self):
+        return [
+            "TRACE_IN();",
+            "UNUSED_PARAMETER(length_dw);"
+        ]
+
     def GetStandardDeclarations(self):
         return []
 
@@ -109,53 +237,94 @@ class FunctionBlock(CodeBlock):
 
         # We only need the root declarations
         for c in self.components:
-            output += indent(1, self.components[c].GetDeclarations())
+            output += self.components[c].GetDeclarations()
 
         return output
 
     def GetTransfertCode(self):
         output = []
         for c in self.components:
-            output += indent(1, self.components[c].GetTransfertCode())
+            output += self.components[c].GetTransfertCode()
         return output
 
-    def GetProlog(self):
+    def GetEpilog(self):
         return []
 
     def GetBody(self):
         output = []
         output.append("{")
 
-        output += self.GetStandardDeclarations()
-        output += self.GetSpecificDeclarations()
-        output += self.GetTransfertCode()
-        output += self.GetProlog()
+        output += indent(1, self.GetStandardDeclarations())
+        output.append("")
+        output += indent(1, self.GetSpecificDeclarations())
+        output.append("")
+        output += indent(1, self.GetTransfertCode())
+        output.append("")
+        output += indent(1, self.GetProlog())
 
         output.append("}")
         return output
 
 class VtestRecvFunction(FunctionBlock):
-    def __init__(self, name, return_value, params):
-        super().__init__(name, return_value, params)
+    def GetPrototype(self):
+        output = []
+        output.append("int")
+        output.append("vtest_{}(uint32_t length_dw)".format(
+            camel_to_snake(self.name)))
+
+        return output
+
+    def GetStandardDeclarations(self):
+        output = []
+
+        # Used by all IO functions
+        output.append("int res;")
+
+        # The parent handle
+        output.append("uint32_t handle;")
+
+        # The output struct
+        output.append("struct vtest_result result;")
+        output.append("{} vk_info;".format(self.infos['info_type']))
+
+        return output
+
+    def GetProlog(self):
+        output = []
+
+        output.append("result.error_code = {}(handle, &vk_info, &result.result);".format(
+            self.infos['vgl_function']))
+        output.append("res = vtest_block_write(renderer.out_fd, &result, sizeof(result));")
+        output.append("CHECK_IO_RESULT(res, sizeof(result));")
+
+        output.append("")
+        output.append("TRACE_OUT();")
+        output.append("RETURN(0);")
+
+        return output
 
 
-
-def prepare_protocol_components(protocol):
+def prepare_protocol_components(spec, protocol):
     to_generate = []
 
     for entry in protocol:
         components = {}
-        
+        fname = camel_to_snake(entry['vk_function'])
+        fname = fname.replace("vk_", "")
+
         for name in entry['chunks']:
             chunk = entry['chunks'][name]
+            chunk['info_type'] = entry['info_type']
+            chunk['handle_type'] = entry['handle_type']
 
             if chunk['parent'] == None:
-                components[name] = Component(name, chunk)
+                typename = "struct payload_{}_{}".format(fname, name)
+                components[name] = VtestRecvComponent(spec, name, chunk, typename)
                 continue
             
             added = False
             for key in components:
-                if components[key].add_subcomponent(name, chunk):
+                if components[key].AddSubcomponent(name, chunk):
                     added = True
                     break
             
@@ -166,16 +335,17 @@ def prepare_protocol_components(protocol):
 
     return to_generate
 
-def generate_code(protocol, vk_functions):
-    to_generate = prepare_protocol_components(protocol)
+def generate_code(protocol, spec):
+    to_generate = prepare_protocol_components(spec, protocol)
     header = ""
     body = ""
 
     for task in to_generate:
-        fname = task[0]['function']
-        function = FunctionBlock(fname,
-                                 vk_functions[fname].ret_value,
-                                 vk_functions[fname].params)
+        fname = task[0]['vk_function']
+        function = VtestRecvFunction(fname,
+                                 spec[fname].ret_value,
+                                 spec[fname].params,
+                                 task[0])
         function.SetComponents(task[1])
 
         header += "\n".join(function.GetPrototype())
@@ -195,17 +365,17 @@ def main():
 
     script_path = os.path.dirname(sys.argv[0])
     protocol = []
-    vk_functions = {}
+    spec = {}
 
     with open(os.path.join(script_path, CREATION_JSON)) as f:
         protocol = json.loads(f.read())
 
-    vk_functions = code_gen.get_entrypoints(et.parse(args.xml))
+    spec = code_gen.load_spec(et.parse(args.xml))
             
     body_code = ""
     header_code = ""
 
-    err, body_code, header_code = generate_code(protocol, vk_functions)
+    err, body_code, header_code = generate_code(protocol, spec)
     if err != 0:
         return err;
 

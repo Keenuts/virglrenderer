@@ -1,9 +1,9 @@
 [
    {
-      "function": "vkCreateDescriptorSetLayout",
+      "vk_function": "vkCreateDescriptorSetLayout",
       "vgl_function": "vgl_vk_create_descriptor_set_layout",
-      "input": "VkDescriptorSetLayoutCreateInfo",
-      "output": "VkDescriptorSetLayout",
+      "info_type": "VkDescriptorSetLayoutCreateInfo",
+      "handle_type": "VkDescriptorSetLayout",
       "id": "VCMD_VK_CREATE_DESCRIPTOR_LAYOUT",
 
       "chunks": {
@@ -27,10 +27,10 @@
       }
    },
    {
-      "function": "vkCreateBuffer",
+      "vk_function": "vkCreateBuffer",
       "vgl_function": "vgl_vk_create_buffer",
-      "input": "VkBufferCreateInfo",
-      "output": "VkBuffer",
+      "info_type": "VkBufferCreateInfo",
+      "handle_type": "VkBuffer",
       "id": "VCMD_VK_CREATE_BUFFER",
 
       "chunks": {

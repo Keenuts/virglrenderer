@@ -72,6 +72,41 @@ def get_entrypoints(doc):
 
     return entrypoints
 
+def get_structs(doc):
+    structs = {}
+
+    for entry in doc.findall('./types/type'):
+        if 'category' not in entry.attrib:
+            continue
+
+        if entry.attrib['category'] != "struct":
+            continue
+
+        name = entry.attrib['name']
+        members = [
+            FunctionParameter(
+                    p.find('./type').text,
+                    p.find('./name').text,
+                    ''.join(p.itertext())
+
+                    ) for p in entry.findall('./member') ]
+
+        structs[name] = {
+            "name": name,
+            "type": "struct",
+            "members": members
+        }
+
+    return structs
+
+def load_spec(doc):
+    dic = {}
+
+    dic = dict(dic, **get_entrypoints(doc))
+    dic = dict(dic, **get_structs(doc))
+
+    return dic
+
 def filter_listed(function_list, entrypoints):
     listed, non_listed = [], []
 
