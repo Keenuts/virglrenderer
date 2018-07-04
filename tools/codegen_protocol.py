@@ -7,6 +7,7 @@ import os
 import sys
 
 CREATION_JSON = "vtest_protocol_objects.json"
+DEFAULT_TYPENAME = "uint32_t"
 INDENT_CHAR=' '
 INDENT_SIZE=3
 
@@ -34,6 +35,36 @@ def spec_get_field_type(spec, struct, field):
     
     raise Exception("Unknown field {}".format(field))
     return ""
+
+def generate_structures(protocol):
+    fname = camel_to_snake(protocol['vk_function'])[3:]
+    structs = []
+
+    for name in protocol['chunks']:
+        chunk = protocol['chunks'][name]
+        code = []
+
+        code.append('struct payload_{0}_{1} '.format(fname, name) + "{")
+
+        if name == 'intro':
+            code.append(indent(1, 'uint32_t handle;'))
+
+        for field in chunk['content']:
+            if name == 'intro' and field['name'] == 'handle':
+                raise Exception("'handle' field in 'intro' chunk is reserved.")
+
+            typename = DEFAULT_TYPENAME
+            if 'type' in field:
+                typename = field['type']
+
+            code.append(indent(1, '{} {};'.format(typename, field['name'])))
+            
+        code.append("};")
+        code.append("")
+
+        structs.append("\n".join(code))
+
+    return structs;
 
 # Structures
 
@@ -335,10 +366,56 @@ def prepare_protocol_components(spec, protocol):
 
     return to_generate
 
-def generate_code(protocol, spec):
-    to_generate = prepare_protocol_components(spec, protocol)
-    header = ""
-    body = ""
+def generate_header_prolog():
+    header = []
+    header.append("#ifndef VTEST_VK_PROTOCOL")
+    header.append("#define VTEST_VK_PROTOCOL")
+    header.append("")
+
+    return header
+
+def generate_body_prolog():
+    body = []
+
+    body.append("/*")
+    body.append(" This file has been generated. Please do not modify it.")
+    body.append("*/")
+
+    body.append("#include <stdio.h>")
+    body.append("#include <stdlib.h>")
+    body.append("#include <string.h>")
+    body.append("#include <vulkan/vulkan.h>")
+    body.append("")
+    body.append('#include "virglrenderer_vulkan.h"')
+    body.append('#include "util/macros.h"')
+    body.append('#include "vtest.h"')
+    body.append('#include "vtest_protocol.h"')
+    body.append('#include "vtest_vk.h"')
+    body.append('#include "vtest_vk_objects.h"')
+    body.append("")
+    body.append("extern struct vtest_renderer renderer;")
+    body.append("")
+
+    return body
+
+def generate_header_epilog():
+    return [ "", "#endif" ]
+
+def generate_body_epilog():
+    return []
+
+def postprocess(code):
+    code = [ l.rstrip() for l in code ]
+    return "\n".join(code)
+
+def generate_header(protocol, spec, to_generate):
+    header = []
+
+    header += generate_header_prolog()
+
+    for elt in protocol:
+        header += generate_structures(elt)
+    header.append("")
 
     for task in to_generate:
         fname = task[0]['vk_function']
@@ -347,15 +424,42 @@ def generate_code(protocol, spec):
                                  spec[fname].params,
                                  task[0])
         function.SetComponents(task[1])
+        header += function.GetPrototype()
+        header[-1] += ";"
 
-        header += "\n".join(function.GetPrototype())
-        header += ";\n\n"
+    header += generate_header_epilog()
 
-        body += "\n".join(function.GetPrototype()) + "\n"
-        body += "\n".join(function.GetBody())
-        body += "\n\n"
+    return header
 
-    return (0, body, header)
+def generate_body(protocol, spec, to_generate):
+    body = []
+    body += generate_body_prolog()
+
+    for task in to_generate:
+        fname = task[0]['vk_function']
+        function = VtestRecvFunction(fname,
+                                 spec[fname].ret_value,
+                                 spec[fname].params,
+                                 task[0])
+        function.SetComponents(task[1])
+        body += function.GetPrototype()
+        body += function.GetBody()
+        body.append("")
+
+    body += generate_body_epilog()
+    return body
+
+def generate_code(protocol, spec):
+    to_generate = prepare_protocol_components(spec, protocol)
+
+    header = generate_header(protocol, spec, to_generate)
+    body = generate_body(protocol, spec, to_generate)
+
+    return (
+        0,
+        postprocess(body),
+        postprocess(header)
+    )
 
 def main():
     parser = argparse.ArgumentParser()
@@ -380,8 +484,8 @@ def main():
         return err;
 
     outputs = [
-        ("vtest_objects.h", header_code),
-        ("vtest_objects.c", body_code),
+        ("vtest_vk_objects.h", header_code),
+        ("vtest_vk_objects.c", body_code),
     ]
 
     for task in outputs:
