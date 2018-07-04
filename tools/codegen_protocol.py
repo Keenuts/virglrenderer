@@ -156,12 +156,18 @@ class VtestRecvComponent(Component):
         ]
 
     def GetAttributeCopyCode(self, prefix = None):
+        output = []
+
+        if prefix != None:
+            output.append("memset(*{0}, 0, sizeof({0}));")
+
         if not 'content' in self.infos:
             if prefix == None:
-                return [ "vk_info = {0};".format(self.name) ]
+                output.append("vk_info = {0};".format(self.name))
             else:
-                return [ "{0}[{1}] = tmp_{0};".format(
-                        self.name, self.parent.GetIterator()) ]
+                output.append("{0}[{1}] = tmp_{0};".format(
+                        self.name, self.parent.GetIterator()))
+            return output
 
         output = []
         if prefix == None:
@@ -278,7 +284,12 @@ class FunctionBlock(CodeBlock):
             output += self.components[c].GetTransfertCode()
         return output
 
+    def GetProlog(self):
+        raise Exception("FunctionBlock class should not be used directly.")
+        return []
+
     def GetEpilog(self):
+        raise Exception("FunctionBlock class should not be used directly.")
         return []
 
     def GetBody(self):
@@ -289,9 +300,11 @@ class FunctionBlock(CodeBlock):
         output.append("")
         output += indent(1, self.GetSpecificDeclarations())
         output.append("")
+        output += indent(1, self.GetProlog())
+        output.append("")
         output += indent(1, self.GetTransfertCode())
         output.append("")
-        output += indent(1, self.GetProlog())
+        output += indent(1, self.GetEpilog())
 
         output.append("}")
         return output
@@ -321,6 +334,13 @@ class VtestRecvFunction(FunctionBlock):
         return output
 
     def GetProlog(self):
+        output = []
+
+        output.append("memset(&vk_info, 0, sizeof(vk_info));");
+
+        return output
+
+    def GetEpilog(self):
         output = []
 
         output.append("result.error_code = {}(handle, &vk_info, &result.result);".format(
