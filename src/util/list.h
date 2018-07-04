@@ -29,9 +29,3 @@ size_t  list_length(struct list *head);
 void    list_append(struct list *head, struct list *n);
 void    list_insert(struct list *head, struct list *n, size_t pos);
 int     list_remove(struct list *head, size_t pos);
-
-/*
-size_t list_len(struct list *head);
-
-void list_insert(struct list **head, struct list *elt, size_t pos);
-*/
