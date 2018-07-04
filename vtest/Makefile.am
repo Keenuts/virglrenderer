@@ -26,10 +26,6 @@ if WITH_VULKAN
 tools_dir = $(top_srcdir)/tools
 vulkan_api_xml = $(tools_dir)/vk.xml
 
-virgl_test_server_SOURCES +=	\
-	vtest_vk.c		\
-	vtest_vk_objects.c
-
 vtest_vk_objects.c: $(tools_dir)/codegen_protocol.py \
 	$(tools_dir)/codegen_utils.py \
 	$(vulkan_api_xml)	\
@@ -39,5 +35,11 @@ vtest_vk_objects.c: $(tools_dir)/codegen_protocol.py \
 		--outdir .
 
 vtest_vk_objects.h: vtest_vk_objects.c
+vtest_server.c: vtest_vk_objects.h
+
+virgl_test_server_SOURCES +=	\
+	vtest_vk.c		\
+	vtest_vk_objects.c
 endif
+
 virgl_test_server_LDADD = $(top_builddir)/src/libvirglrenderer.la
