@@ -85,7 +85,12 @@ static int init_physical_devices(struct virgl_vk *state)
 
    uint32_t device_count;
 
-   list_init(&state->devices.list);
+   state->devices = malloc(sizeof(*state->devices));
+   if (NULL == state->devices) {
+      RETURN(-1);
+   }
+
+   list_init(&state->devices->list);
 
    CALL_VK(vkEnumeratePhysicalDevices, (state->vk_instance, &device_count, NULL));
    if (device_count == 0) {

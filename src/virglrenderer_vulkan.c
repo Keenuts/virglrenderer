@@ -5,14 +5,13 @@
 #include <string.h>
 #include <vulkan/vulkan.h>
 
-#include "virgl_vk.h"
 #include "util/macros.h"
+#include "util/u_hash_table.h"
+#include "util/u_pointer.h"
+#include "virgl_vk.h"
 
 int virgl_vk_get_device_count(uint32_t *device_count)
 {
-   uint32_t dev_count;
-   VkResult res;
-
    TRACE_IN();
 
    *device_count = vk_info->physical_device_count;
@@ -27,7 +26,7 @@ int virgl_vk_get_sparse_properties(uint32_t device_id,
 
    TRACE_IN();
 
-   if (device_id < 0 || device_id >= vk_info->physical_device_count) {
+   if (device_id >= vk_info->physical_device_count) {
       RETURN(-1);
    }
 
@@ -39,10 +38,9 @@ int virgl_vk_get_sparse_properties(uint32_t device_id,
 
 static VkPhysicalDevice get_physical_device(uint32_t id)
 {
-   struct list_physical_device *it = NULL;
    TRACE_IN();
 
-   if (id < 0 || id >= vk_info->physical_device_count) {
+   if (id >= vk_info->physical_device_count) {
       RETURN(VK_NULL_HANDLE);
    }
 
@@ -75,13 +73,37 @@ int virgl_vk_get_queue_family_properties(uint32_t device_id,
    RETURN(0);
 }
 
+/* reusing the same function as vrend does.*/
+static unsigned hash_func(void *key)
+{
+   intptr_t ip = pointer_to_intptr(key);
+   return (unsigned)(ip & 0xffffffff);
+}
+
+static int vkobj_compare(void *a, void *b)
+{
+   if (a < b) {
+      return -1;
+   } else if (a > b) {
+      return 1;
+   }
+   return 0;
+}
+
+static void vkobj_free(void *handle)
+{
+   struct vk_object *obj = handle;
+
+   obj->cleanup_callback(obj->vk_device, obj->vk_handle, NULL);
+   free(obj);
+}
+
 static int initialize_vk_device(VkDevice dev,
                                 const VkDeviceCreateInfo *info,
                                 uint32_t *device_id)
 {
-   struct list_device *device;
+   struct vk_device *device;
    const VkDeviceQueueCreateInfo *queue_info;
-   uint32_t queue_count;
 
    TRACE_IN();
 
@@ -90,7 +112,7 @@ static int initialize_vk_device(VkDevice dev,
       return -1;
    }
 
-   *device_id = list_length(&vk_info->devices.list);
+   *device_id = list_length(&vk_info->devices->list);
 
    list_init(&device->list);
    device->vk_device = dev;
@@ -117,7 +139,12 @@ static int initialize_vk_device(VkDevice dev,
       }
    }
 
-   list_append(&vk_info->devices.list, &device->list);
+   /* creating device resource maps */
+   device->next_handle = 1;
+   device->objects = util_hash_table_create(hash_func, vkobj_compare, vkobj_free);
+
+   /* registering device */
+   list_append(&vk_info->devices->list, &device->list);
    return 0;
 }
 
@@ -149,21 +176,90 @@ int virgl_vk_create_device(uint32_t phys_device_id,
    RETURN(0);
 }
 
+static struct vk_device* get_device_from_handle(uint32_t handle)
+{
+   uint32_t max_device = list_length(&vk_info->devices->list);
+   if (handle >= max_device) {
+      return NULL;
+   }
+
+   struct vk_device *it = NULL;
+   LIST_FOR_EACH(it, vk_info->devices->list, list) {
+      if (handle == 0)
+         break;
+      handle--;
+   }
+
+   return it;
+}
+
+static uint32_t
+device_insert_object(struct vk_device *dev, void *vk_handle, void *callback)
+{
+   struct vk_object *object = NULL;
+
+   object = malloc(sizeof(*object));
+   if (NULL == object) {
+      return 0;
+   }
+
+   object->vk_device = dev->vk_device;
+   object->vk_handle = vk_handle;
+   object->handle = dev->next_handle;
+   object->cleanup_callback = callback;
+   dev->next_handle += 1;
+
+   util_hash_table_set(dev->objects, intptr_to_pointer(object->handle), object);
+   return object->handle;
+}
+
 int virgl_vk_create_descriptor_set_layout(uint32_t device_id,
-													   const VkDescriptorSetLayoutCreateInfo *info,
+													   VkDescriptorSetLayoutCreateInfo *info,
 													   uint32_t *handle)
 {
+   struct vk_device *device = NULL;
+   VkDescriptorSetLayout *vk_handle = NULL;
+   VkResult res;
+
 	TRACE_IN();
-	puts("CREATING DESCRIPTOR SET LAYOUT");
-	*handle = 1;
-	RETURN(0);
+
+   info->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+
+   device = get_device_from_handle(device_id);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   vk_handle = malloc(sizeof(*vk_handle));;
+   if (NULL == vk_handle) {
+      RETURN(-2);
+   }
+
+   res = vkCreateDescriptorSetLayout(device->vk_device, info, NULL, vk_handle);
+   if (VK_SUCCESS != res) {
+      free(vk_handle);
+      RETURN(-3);
+   }
+
+   *handle = device_insert_object(device, vk_handle, vkDestroyDescriptorSetLayout);
+   if (*handle == 0) {
+      RETURN(-4);
+   }
+
+   printf("%s: handle=%d\n", __func__, *handle);
+   RETURN(0);
 }
 
 int virgl_vk_create_buffer(uint32_t device_id,
-								   const VkBufferCreateInfo *info,
+								   VkBufferCreateInfo *info,
 								   uint32_t *handle)
 {
 	TRACE_IN();
+
+   UNUSED_PARAMETER(device_id);
+   UNUSED_PARAMETER(info);
+   UNUSED_PARAMETER(handle);
+
 	puts("CREATING BUFFER");
 	*handle = 1;
 	RETURN(0);
