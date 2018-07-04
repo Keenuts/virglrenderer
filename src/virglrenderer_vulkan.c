@@ -148,3 +148,23 @@ int virgl_vk_create_device(uint32_t phys_device_id,
 
    RETURN(0);
 }
+
+int virgl_vk_create_descriptor_set_layout(uint32_t device_id,
+													   const VkDescriptorSetLayoutCreateInfo *info,
+													   uint32_t *handle)
+{
+	TRACE_IN();
+	puts("CREATING DESCRIPTOR SET LAYOUT");
+	*handle = 1;
+	RETURN(0);
+}
+
+int virgl_vk_create_buffer(uint32_t device_id,
+								   const VkBufferCreateInfo *info,
+								   uint32_t *handle)
+{
+	TRACE_IN();
+	puts("CREATING BUFFER");
+	*handle = 1;
+	RETURN(0);
+}

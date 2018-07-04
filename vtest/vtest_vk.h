@@ -5,7 +5,11 @@ int vtest_vk_enumerate_devices(uint32_t length_dw);
 int vtest_vk_get_sparse_properties(uint32_t length_dw);
 int vtest_vk_get_queue_family_properties(uint32_t length_dw);
 int vtest_vk_create_device(uint32_t length_dw);
-int vtest_vk_create_descriptor_set(uint32_t length_dw);
-int vtest_vk_create_buffer(uint32_t length_dw);
+
+#define CHECK_IO_RESULT(Done, Expected)                                    \
+   if ((Done) < (Expected)) {                                              \
+      fprintf(stderr, "%s: failed to write back the answer.\n", __func__); \
+      RETURN(-1);                                                          \
+   }
 
 #endif

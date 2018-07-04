@@ -131,9 +131,11 @@ AM_CONDITIONAL([WITH_GLX], [test "x$with_glx" = "xyes"])
 
 AC_ARG_WITH([vulkan], AS_HELP_STRING([--with-vulkan], [enable vulkan(experimental)]))
 AS_IF([test "x$with_vulkan" = "xyes"], [
-  with_vulkan=yes
+
   AC_CHECK_LIB([vulkan], [vkCreateInstance])
+  AC_CHECK_PROGS([PYTHON3], [python3 python])
   PKG_CHECK_MODULES([VULKAN], [vulkan])
+  with_vulkan=yes
   DEFINES="$DEFINES -DWITH_VULKAN"
 ],[
   with_vulkan=no
