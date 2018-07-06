@@ -264,3 +264,36 @@ int virgl_vk_create_buffer(uint32_t device_id,
 	*handle = 1;
 	RETURN(0);
 }
+
+int virgl_vk_allocate_descriptor_set(uint32_t device_id,
+                                     uint32_t pool_id,
+                                     uint32_t descriptor_count,
+                                     uint32_t *desc_layout_ids,
+                                     uint32_t *handles)
+{
+   TRACE_IN();
+
+   UNUSED_PARAMETER(device_id);
+   UNUSED_PARAMETER(pool_id);
+   UNUSED_PARAMETER(descriptor_count);
+   UNUSED_PARAMETER(desc_layout_ids);
+   UNUSED_PARAMETER(handles);
+
+   puts("ALLOCATING DESCRIPTOR");
+   RETURN(0);
+}
+
+int virgl_vk_create_shader_module(uint32_t device_id,
+                                  const VkShaderModuleCreateInfo *info,
+                                  uint32_t *handle)
+{
+   TRACE_IN();
+
+   UNUSED_PARAMETER(device_id);
+   UNUSED_PARAMETER(info);
+   UNUSED_PARAMETER(handle);
+
+   puts("CREATING SHADER");
+
+   RETURN(0);
+}
