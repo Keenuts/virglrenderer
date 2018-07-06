@@ -98,6 +98,43 @@ static void vkobj_free(void *handle)
    free(obj);
 }
 
+static struct vk_device* get_device_from_handle(uint32_t handle)
+{
+   uint32_t max_device = list_length(&vk_info->devices->list);
+   if (handle >= max_device) {
+      return NULL;
+   }
+
+   struct vk_device *it = NULL;
+   LIST_FOR_EACH(it, vk_info->devices->list, list) {
+      if (handle == 0)
+         break;
+      handle--;
+   }
+
+   return it;
+}
+
+static uint32_t
+device_insert_object(struct vk_device *dev, void *vk_handle, void *callback)
+{
+   struct vk_object *object = NULL;
+
+   object = malloc(sizeof(*object));
+   if (NULL == object) {
+      return 0;
+   }
+
+   object->vk_device = dev->vk_device;
+   object->vk_handle = vk_handle;
+   object->handle = dev->next_handle;
+   object->cleanup_callback = callback;
+   dev->next_handle += 1;
+
+   util_hash_table_set(dev->objects, intptr_to_pointer(object->handle), object);
+   return object->handle;
+}
+
 static int initialize_vk_device(VkDevice dev,
                                 const VkDeviceCreateInfo *info,
                                 uint32_t *device_id)
@@ -174,43 +211,6 @@ int virgl_vk_create_device(uint32_t phys_device_id,
    }
 
    RETURN(0);
-}
-
-static struct vk_device* get_device_from_handle(uint32_t handle)
-{
-   uint32_t max_device = list_length(&vk_info->devices->list);
-   if (handle >= max_device) {
-      return NULL;
-   }
-
-   struct vk_device *it = NULL;
-   LIST_FOR_EACH(it, vk_info->devices->list, list) {
-      if (handle == 0)
-         break;
-      handle--;
-   }
-
-   return it;
-}
-
-static uint32_t
-device_insert_object(struct vk_device *dev, void *vk_handle, void *callback)
-{
-   struct vk_object *object = NULL;
-
-   object = malloc(sizeof(*object));
-   if (NULL == object) {
-      return 0;
-   }
-
-   object->vk_device = dev->vk_device;
-   object->vk_handle = vk_handle;
-   object->handle = dev->next_handle;
-   object->cleanup_callback = callback;
-   dev->next_handle += 1;
-
-   util_hash_table_set(dev->objects, intptr_to_pointer(object->handle), object);
-   return object->handle;
 }
 
 int virgl_vk_create_descriptor_set_layout(uint32_t device_id,
