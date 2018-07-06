@@ -230,7 +230,7 @@ int virgl_vk_create_descriptor_set_layout(uint32_t device_id,
       RETURN(-1);
    }
 
-   vk_handle = malloc(sizeof(*vk_handle));;
+   vk_handle = malloc(sizeof(*vk_handle));
    if (NULL == vk_handle) {
       RETURN(-2);
    }
@@ -243,6 +243,7 @@ int virgl_vk_create_descriptor_set_layout(uint32_t device_id,
 
    *handle = device_insert_object(device, vk_handle, vkDestroyDescriptorSetLayout);
    if (*handle == 0) {
+      free(vk_handle);
       RETURN(-4);
    }
 
