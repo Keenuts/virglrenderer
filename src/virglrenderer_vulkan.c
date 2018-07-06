@@ -135,6 +135,24 @@ device_insert_object(struct vk_device *dev, void *vk_handle, void *callback)
    return object->handle;
 }
 
+static void*
+device_get_object(struct vk_device *dev, uint32_t handle)
+{
+   struct vk_object *object = NULL;
+   object = util_hash_table_get(dev->objects, intptr_to_pointer(handle));
+   if (NULL == object) {
+      return NULL;
+   }
+
+   return object->vk_handle;
+}
+
+static void
+device_remove_object(struct vk_device *dev, uint32_t handle)
+{
+   util_hash_table_remove(dev->objects, &handle);
+}
+
 static int initialize_vk_device(VkDevice dev,
                                 const VkDeviceCreateInfo *info,
                                 uint32_t *device_id)
@@ -155,7 +173,7 @@ static int initialize_vk_device(VkDevice dev,
    device->vk_device = dev;
 
    /* initializing device queues */
-   device->queue_count = 0; 
+   device->queue_count = 0;
    for (uint32_t i = 0; i < info->queueCreateInfoCount; i++) {
       device->queue_count += info->pQueueCreateInfos[i].queueCount;
    }
@@ -279,13 +297,85 @@ int virgl_vk_create_descriptor_pool(uint32_t device_id,
    }
 
    *handle = device_insert_object(device, vk_handle, vkDestroyDescriptorPool);
-   if (*handle == 0) {
+   if (0 == *handle) {
       free(vk_handle);
       RETURN(-4);
    }
 
    printf("%s: handle=%d\n", __func__, *handle);
 	RETURN(0);
+}
+
+int virgl_vk_allocate_descriptor_set(uint32_t device_handle,
+                                     uint32_t pool_handle,
+                                     uint32_t descriptor_count,
+                                     uint32_t *desc_layout_ids,
+                                     uint32_t *handles)
+{
+   TRACE_IN();
+   struct vk_device *device = NULL;
+   VkDescriptorPool *vk_pool;
+
+   VkDescriptorSetLayout *vk_layouts = NULL;
+   VkDescriptorSet *vk_sets = NULL;
+   VkDescriptorSetAllocateInfo vk_info;
+   VkResult res;
+
+   device = get_device_from_handle(device_handle);
+   vk_pool = device_get_object(device, pool_handle);
+   if (NULL == device || NULL == vk_pool) {
+      RETURN(-1);
+   }
+
+   vk_sets = malloc(sizeof(*vk_sets) * descriptor_count);
+   vk_layouts = malloc(sizeof(*vk_layouts) * descriptor_count);
+   if (NULL == vk_sets || NULL == vk_layouts) {
+      free(vk_sets);
+      free(vk_layouts);
+      RETURN(-2);
+   }
+
+   for (uint32_t i = 0; i < descriptor_count; i++) {
+      VkDescriptorSetLayout *ptr = device_get_object(device, desc_layout_ids[i]);
+      if (NULL != ptr) {
+         vk_layouts[i] = *ptr;
+         continue;
+      }
+
+      free(vk_sets);
+      free(vk_layouts);
+      RETURN(-9);
+   }
+
+   vk_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+   vk_info.pNext = NULL;
+   vk_info.descriptorPool = *vk_pool;
+   vk_info.descriptorSetCount = descriptor_count;
+   vk_info.pSetLayouts = vk_layouts;
+
+   res = vkAllocateDescriptorSets(device->vk_device,
+                                  &vk_info,
+                                  vk_sets);
+   if (VK_SUCCESS != res) {
+      free(vk_sets);
+      RETURN(-3);
+   }
+
+   for (uint32_t i = 0; i < descriptor_count; i++) {
+      handles[i] = device_insert_object(device, vk_sets + i, vkDestroyDescriptorPool);
+      if (0 != handles[i]) {
+         /* success path */
+         continue;
+      }
+
+      /* If an error occured, clean-up old handles, and exit */
+      for (uint32_t j = i; j > 0; j++) {
+         device_remove_object(device, handles[j - 1]);
+      }
+      RETURN(-4);
+   }
+
+   RETURN(0);
 }
 
 int virgl_vk_create_buffer(uint32_t device_id,
@@ -301,24 +391,6 @@ int virgl_vk_create_buffer(uint32_t device_id,
 	puts("CREATING BUFFER");
 	*handle = 1;
 	RETURN(-1);
-}
-
-int virgl_vk_allocate_descriptor_set(uint32_t device_id,
-                                     uint32_t pool_id,
-                                     uint32_t descriptor_count,
-                                     uint32_t *desc_layout_ids,
-                                     uint32_t *handles)
-{
-   TRACE_IN();
-
-   UNUSED_PARAMETER(device_id);
-   UNUSED_PARAMETER(pool_id);
-   UNUSED_PARAMETER(descriptor_count);
-   UNUSED_PARAMETER(desc_layout_ids);
-   UNUSED_PARAMETER(handles);
-
-   puts("ALLOCATING DESCRIPTOR");
-   RETURN(-1);
 }
 
 int virgl_vk_create_shader_module(uint32_t device_id,
