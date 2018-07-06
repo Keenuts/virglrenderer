@@ -109,6 +109,8 @@ static const int (*vtest_commands[])(uint32_t length_dw) = {
     vtest_vk_create_device,
     vtest_vk_create_descriptor_set_layout,
     vtest_vk_create_buffer,
+    vtest_vk_allocate_descriptor_sets,
+    vtest_vk_create_shader_module
 #endif
 };
 
