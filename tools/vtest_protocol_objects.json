@@ -48,5 +48,54 @@
               ]
           }
       }
+   },
+   {
+      "vk_function": "vkAllocateDescriptorSets",
+      "vgl_function": "virgl_vk_allocate_descriptor_set",
+      "info_type": "VkDescriptorSet",
+      "handle_type": "VkDescriptorSet",
+      "handle_multiple": true,
+      "handle_count": "descriptorSetCount",
+
+      "id": "VCMD_VK_ALLOCATE_DESCRIPTOR",
+
+      "chunks": {
+         "intro": {
+            "parent": null,
+            "content": [
+               { "name": "descriptorPool" },
+               { "name": "descriptorSetCount" },
+               { "name": "pSetLayouts" }
+            ]
+         },
+         "pSetLayouts": {
+            "parent": "intro",
+            "count": "descriptorSetCount",
+            "content": [ ]
+         }
+      }
+   },
+   {
+      "vk_function": "vkCreateShaderModule",
+      "vgl_function": "virgl_vk_create_shader_module",
+      "info_type": "VkShaderModuleCreateInfo",
+      "handle_type": "VkShaderModule",
+
+      "id": "VCMD_VK_CREATE_SHADER_MODULE",
+
+      "chunks": {
+         "intro": {
+            "parent": null,
+            "content": [
+               { "name": "flags" },
+               { "name": "codeSize" }
+            ]
+         },
+         "pCode": {
+            "parent": "intro",
+            "count": "codeSize",
+            "content": [ ]
+         }
+      }
    }
 ]
