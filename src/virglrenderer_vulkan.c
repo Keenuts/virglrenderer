@@ -251,6 +251,43 @@ int virgl_vk_create_descriptor_set_layout(uint32_t device_id,
    RETURN(0);
 }
 
+int virgl_vk_create_descriptor_pool(uint32_t device_id,
+                                    VkDescriptorPoolCreateInfo *info,
+                                    uint32_t *handle)
+{
+	TRACE_IN();
+
+   struct vk_device *device = NULL;
+   VkDescriptorPool *vk_handle = NULL;
+   VkResult res;
+
+   info->sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+   device = get_device_from_handle(device_id);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   vk_handle = malloc(sizeof(*vk_handle));
+   if (NULL == vk_handle) {
+      RETURN(-2);
+   }
+
+   res = vkCreateDescriptorPool(device->vk_device, info, NULL, vk_handle);
+   if (VK_SUCCESS != res) {
+      free(vk_handle);
+      RETURN(-3);
+   }
+
+   *handle = device_insert_object(device, vk_handle, vkDestroyDescriptorPool);
+   if (*handle == 0) {
+      free(vk_handle);
+      RETURN(-4);
+   }
+
+   printf("%s: handle=%d\n", __func__, *handle);
+	RETURN(0);
+}
+
 int virgl_vk_create_buffer(uint32_t device_id,
 								   VkBufferCreateInfo *info,
 								   uint32_t *handle)

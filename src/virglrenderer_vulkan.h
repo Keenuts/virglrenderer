@@ -40,4 +40,8 @@ VIRGL_EXPORT int
 virgl_vk_create_shader_module(uint32_t device_id,
                               const VkShaderModuleCreateInfo *info,
                               uint32_t *handle);
+VIRGL_EXPORT int
+virgl_vk_create_descriptor_pool(uint32_t device_id,
+                                const VkDescriptorPoolCreateInfo *vk_info,
+                                uint32_t *handle);
 #endif
