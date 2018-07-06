@@ -104,11 +104,12 @@ vtest_vk_allocate_descriptor_sets(uint32_t length_dw)
    pool_handle = intro.descriptorPool;
 
    /* reading all handles sent at the end */
-   set_layout_handles = alloca(sizeof(*set_layout_handles) * intro.descriptorSetCount);
+   set_layout_handles = alloca(sizeof(uint32_t) * intro.descriptorSetCount);
 
+   printf("Reading %d handles\n", intro.descriptorSetCount);
    res = vtest_block_read(renderer.in_fd,
                           set_layout_handles,
-                          sizeof(*set_layout_handles) * intro.descriptorSetCount);
+                          sizeof(uint32_t) * intro.descriptorSetCount);
 
    output_handles = alloca(sizeof(uint32_t) * intro.descriptorSetCount);
    result.error_code = virgl_vk_allocate_descriptor_set(handle,

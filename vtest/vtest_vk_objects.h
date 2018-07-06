@@ -27,7 +27,6 @@ struct payload_allocate_descriptor_sets_intro {
    uint32_t handle;
    uint32_t descriptorPool;
    uint32_t descriptorSetCount;
-   uint32_t pSetLayouts;
 };
 
 struct payload_create_shader_module_intro {
