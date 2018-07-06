@@ -262,7 +262,7 @@ int virgl_vk_create_buffer(uint32_t device_id,
 
 	puts("CREATING BUFFER");
 	*handle = 1;
-	RETURN(0);
+	RETURN(-1);
 }
 
 int virgl_vk_allocate_descriptor_set(uint32_t device_id,
@@ -280,7 +280,7 @@ int virgl_vk_allocate_descriptor_set(uint32_t device_id,
    UNUSED_PARAMETER(handles);
 
    puts("ALLOCATING DESCRIPTOR");
-   RETURN(0);
+   RETURN(-1);
 }
 
 int virgl_vk_create_shader_module(uint32_t device_id,
@@ -295,5 +295,5 @@ int virgl_vk_create_shader_module(uint32_t device_id,
 
    puts("CREATING SHADER");
 
-   RETURN(0);
+   RETURN(-1);
 }

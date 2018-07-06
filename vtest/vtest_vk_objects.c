@@ -97,6 +97,8 @@ vtest_vk_allocate_descriptor_sets(uint32_t length_dw)
    uint32_t *set_layout_handles = NULL;
    uint32_t *output_handles = NULL;
 
+   TRACE_IN();
+
    struct payload_allocate_descriptor_sets_intro intro;
    res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
    CHECK_IO_RESULT(res, sizeof(intro));
