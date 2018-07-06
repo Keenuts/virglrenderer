@@ -22,7 +22,7 @@ def camel_to_snake(name):
 
 def spec_get_field_type(spec, struct, field):
     if struct not in spec:
-        raise Exception("Unknown typename {}".format(struct))
+        return struct
 
     st = spec[struct]
 
