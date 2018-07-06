@@ -97,5 +97,32 @@
             "content": [ ]
          }
       }
+   },
+   {
+      "vk_function": "vkCreateDescriptorPool",
+      "vgl_function": "virgl_vk_create_descriptor_pool",
+      "info_type": "VkDescriptorPoolCreateInfo",
+      "handle_type": "VkDescriptorPool",
+
+      "id": "VCMD_VK_CREATE_DESCRIPTOR_POOL",
+
+      "chunks": {
+         "intro": {
+            "parent": null,
+            "content": [
+               { "name": "flags" },
+               { "name": "maxSets" },
+               { "name": "poolSizeCount" }
+            ]
+         },
+         "pPoolSizes": {
+            "parent": "intro",
+            "count": "poolSizeCount",
+            "content": [
+               { "name": "type" },
+               { "name": "descriptorCount" }
+            ]
+         }
+      }
    }
 ]
