@@ -19,27 +19,28 @@ vtest_vk_create_descriptor_set_layout(uint32_t length_dw)
    uint32_t handle;
    struct vtest_result result;
    VkDescriptorSetLayoutCreateInfo vk_info;
+   VkDescriptorSetLayoutBinding *pBindings = NULL;
 
    struct payload_create_descriptor_set_layout_intro intro;
-
-   memset(&vk_info, 0, sizeof(vk_info));
+   struct payload_create_descriptor_set_layout_pBindings binding;
 
    res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
    CHECK_IO_RESULT(res, sizeof(intro));
+
+   memset(&vk_info, 0, sizeof(vk_info));
    vk_info.flags = intro.flags;
    vk_info.bindingCount = intro.bindingCount;
 
-   struct payload_create_descriptor_set_layout_pBindings tmp_pBindings;
-   VkDescriptorSetLayoutBinding *pBindings = NULL;
+   /* reading bindings */
    pBindings = alloca(sizeof(*pBindings) * vk_info.bindingCount);
 
-   for (uint32_t i = 0; i < intro.bindingCount; i++) {
-      res = vtest_block_read(renderer.in_fd, &tmp_pBindings, sizeof(tmp_pBindings));
-      CHECK_IO_RESULT(res, sizeof(tmp_pBindings));
-      pBindings[i].binding = tmp_pBindings.binding;
-      pBindings[i].descriptorType = tmp_pBindings.descriptorType;
-      pBindings[i].descriptorCount = tmp_pBindings.descriptorCount;
-      pBindings[i].stageFlags = tmp_pBindings.stageFlags;
+   for (uint32_t i = 0; i < vk_info.bindingCount; i++) {
+      res = vtest_block_read(renderer.in_fd, &binding, sizeof(binding));
+      CHECK_IO_RESULT(res, sizeof(binding));
+      pBindings[i].binding = binding.binding;
+      pBindings[i].descriptorType = binding.descriptorType;
+      pBindings[i].descriptorCount = binding.descriptorCount;
+      pBindings[i].stageFlags = binding.stageFlags;
       pBindings[i].pImmutableSamplers = NULL;
    }
 

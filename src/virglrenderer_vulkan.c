@@ -187,7 +187,7 @@ static int initialize_vk_device(VkDevice dev,
    uint32_t id = 0;
    for (uint32_t i = 0; i < info->queueCreateInfoCount; i++) {
       queue_info = info->pQueueCreateInfos + i;
-      
+
       for (uint32_t j = 0; j < queue_info->queueCount; j++) {
          vkGetDeviceQueue(dev, queue_info->queueFamilyIndex, j, device->queues + id);
          id += 1;
@@ -212,7 +212,7 @@ int virgl_vk_create_device(uint32_t phys_device_id,
    VkDevice dev;
    VkResult res;
    VkPhysicalDevice physical_dev;
-   
+
    physical_dev = get_physical_device(phys_device_id);
    if (physical_dev == VK_NULL_HANDLE) {
       RETURN(-1);
