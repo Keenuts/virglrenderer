@@ -265,7 +265,6 @@ int virgl_vk_create_descriptor_set_layout(uint32_t device_id,
       RETURN(-4);
    }
 
-   printf("%s: handle=%d\n", __func__, *handle);
    RETURN(0);
 }
 
@@ -302,7 +301,6 @@ int virgl_vk_create_descriptor_pool(uint32_t device_id,
       RETURN(-4);
    }
 
-   printf("%s: handle=%d\n", __func__, *handle);
 	RETURN(0);
 }
 
