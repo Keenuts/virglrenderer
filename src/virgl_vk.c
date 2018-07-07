@@ -133,7 +133,11 @@ struct virgl_vk* virgl_vk_init()
    application_info.apiVersion = VK_MAKE_VERSION(1,1,0);
 
    const char *validation_layers[] = {
-      "VK_LAYER_LUNARG_standard_validation",
+      //"VK_LAYER_LUNARG_standard_validation",
+      //"VK_LAYER_LUNARG_parameter_validation",
+      //"VK_LAYER_LUNARG_standard_validation",
+      //"VK_LAYER_LUNARG_object_tracker",
+      //"VK_LAYER_LUNARG_core_validation",
    };
 
    info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
