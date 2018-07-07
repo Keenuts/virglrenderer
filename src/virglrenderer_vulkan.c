@@ -376,6 +376,41 @@ int virgl_vk_allocate_descriptor_set(uint32_t device_handle,
    RETURN(0);
 }
 
+int virgl_vk_create_shader_module(uint32_t device_handle,
+                                  const VkShaderModuleCreateInfo *info,
+                                  uint32_t *handle)
+{
+   TRACE_IN();
+
+   struct vk_device *device = NULL;
+   VkShaderModule *vk_handle = NULL;
+   VkResult res;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   vk_handle = malloc(sizeof(*vk_handle));
+   if (NULL == vk_handle) {
+      RETURN(-2);
+   }
+
+   res = vkCreateShaderModule(device->vk_device, info, NULL, vk_handle);
+   if (VK_SUCCESS != res) {
+      free(vk_handle);
+      RETURN(-3);
+   }
+
+   *handle = device_insert_object(device, vk_handle, vkDestroyShaderModule);
+   if (0 == *handle) {
+      free(vk_handle);
+      RETURN(-4);
+   }
+
+   RETURN(0);
+}
+
 int virgl_vk_create_buffer(uint32_t device_id,
 								   VkBufferCreateInfo *info,
 								   uint32_t *handle)
@@ -389,19 +424,4 @@ int virgl_vk_create_buffer(uint32_t device_id,
 	puts("CREATING BUFFER");
 	*handle = 1;
 	RETURN(-1);
-}
-
-int virgl_vk_create_shader_module(uint32_t device_id,
-                                  const VkShaderModuleCreateInfo *info,
-                                  uint32_t *handle)
-{
-   TRACE_IN();
-
-   UNUSED_PARAMETER(device_id);
-   UNUSED_PARAMETER(info);
-   UNUSED_PARAMETER(handle);
-
-   puts("CREATING SHADER");
-
-   RETURN(-1);
 }
