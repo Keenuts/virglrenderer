@@ -40,6 +40,7 @@ vtest_vk_create_descriptor_set_layout(uint32_t length_dw)
       pBindings[i].descriptorType = tmp_pBindings.descriptorType;
       pBindings[i].descriptorCount = tmp_pBindings.descriptorCount;
       pBindings[i].stageFlags = tmp_pBindings.stageFlags;
+      pBindings[i].pImmutableSamplers = NULL;
    }
 
    vk_info.pBindings = pBindings;
