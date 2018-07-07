@@ -101,7 +101,7 @@ int vtest_vk_get_queue_family_properties(uint32_t length_dw)
 
 int vtest_vk_create_device(uint32_t length_dw)
 {
-   VkDeviceCreateInfo         vk_device_info = { 0 };
+   VkDeviceCreateInfo         vk_device_info;;
    VkDeviceQueueCreateInfo   *vk_queue_info = NULL;
 
    struct VkPhysicalDeviceFeatures     features;
@@ -118,6 +118,7 @@ int vtest_vk_create_device(uint32_t length_dw)
    res = vtest_block_read(renderer.in_fd, &create_info, sizeof(create_info));
    CHECK_IO_RESULT(res, sizeof(create_info));
 
+   memset(&vk_device_info, 0, sizeof(vk_device_info));
    vk_device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
    vk_device_info.flags = create_info.flags;
    vk_device_info.queueCreateInfoCount = create_info.queue_info_count;
