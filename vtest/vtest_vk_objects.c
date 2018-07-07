@@ -13,6 +13,46 @@
 extern struct vtest_renderer renderer;
 
 int
+vtest_vk_create_descriptor_pool(uint32_t length_dw)
+{
+   int res;
+   uint32_t handle;
+   struct vtest_result result;
+   VkDescriptorPoolCreateInfo vk_info;
+
+   struct payload_create_descriptor_pool_intro intro;
+
+   memset(&vk_info, 0, sizeof(vk_info));
+
+   res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
+   CHECK_IO_RESULT(res, sizeof(intro));
+   vk_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+   vk_info.flags = intro.flags;
+   vk_info.maxSets = intro.maxSets;
+   vk_info.poolSizeCount = intro.poolSizeCount;
+
+   struct payload_create_descriptor_pool_pPoolSizes tmp_pPoolSizes;
+   VkDescriptorPoolSize *pPoolSizes = NULL;
+   pPoolSizes = alloca(sizeof(*pPoolSizes) * vk_info.poolSizeCount);
+
+   for (uint32_t i = 0; i < intro.poolSizeCount; i++) {
+      res = vtest_block_read(renderer.in_fd, &tmp_pPoolSizes, sizeof(tmp_pPoolSizes));
+      CHECK_IO_RESULT(res, sizeof(tmp_pPoolSizes));
+      pPoolSizes[i].type = tmp_pPoolSizes.type;
+      pPoolSizes[i].descriptorCount = tmp_pPoolSizes.descriptorCount;
+   }
+
+   vk_info.pPoolSizes = pPoolSizes;
+
+   result.error_code = virgl_vk_create_descriptor_pool(handle, &vk_info, &result.result);
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   TRACE_OUT();
+   RETURN(0);
+}
+
+int
 vtest_vk_create_descriptor_set_layout(uint32_t length_dw)
 {
    int res;
@@ -28,6 +68,7 @@ vtest_vk_create_descriptor_set_layout(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(intro));
 
    memset(&vk_info, 0, sizeof(vk_info));
+   vk_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
    vk_info.flags = intro.flags;
    vk_info.bindingCount = intro.bindingCount;
 
@@ -160,45 +201,6 @@ vtest_vk_create_shader_module(uint32_t length_dw)
 
    result.error_code = virgl_vk_create_shader_module(handle, &vk_info, &result.result);
 
-   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
-   CHECK_IO_RESULT(res, sizeof(result));
-
-   TRACE_OUT();
-   RETURN(0);
-}
-
-int
-vtest_vk_create_descriptor_pool(uint32_t length_dw)
-{
-   int res;
-   uint32_t handle;
-   struct vtest_result result;
-   VkDescriptorPoolCreateInfo vk_info;
-
-   struct payload_create_descriptor_pool_intro intro;
-
-   memset(&vk_info, 0, sizeof(vk_info));
-
-   res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
-   CHECK_IO_RESULT(res, sizeof(intro));
-   vk_info.flags = intro.flags;
-   vk_info.maxSets = intro.maxSets;
-   vk_info.poolSizeCount = intro.poolSizeCount;
-
-   struct payload_create_descriptor_pool_pPoolSizes tmp_pPoolSizes;
-   VkDescriptorPoolSize *pPoolSizes = NULL;
-   pPoolSizes = alloca(sizeof(*pPoolSizes) * vk_info.poolSizeCount);
-
-   for (uint32_t i = 0; i < intro.poolSizeCount; i++) {
-      res = vtest_block_read(renderer.in_fd, &tmp_pPoolSizes, sizeof(tmp_pPoolSizes));
-      CHECK_IO_RESULT(res, sizeof(tmp_pPoolSizes));
-      pPoolSizes[i].type = tmp_pPoolSizes.type;
-      pPoolSizes[i].descriptorCount = tmp_pPoolSizes.descriptorCount;
-   }
-
-   vk_info.pPoolSizes = pPoolSizes;
-
-   result.error_code = virgl_vk_create_descriptor_pool(handle, &vk_info, &result.result);
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
