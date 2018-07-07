@@ -76,6 +76,33 @@
       }
    },
    {
+      "vk_function": "vkCreateDescriptorPool",
+      "vgl_function": "virgl_vk_create_descriptor_pool",
+      "info_type": "VkDescriptorPoolCreateInfo",
+      "handle_type": "VkDescriptorPool",
+
+      "id": "VCMD_VK_CREATE_DESCRIPTOR_POOL",
+
+      "chunks": {
+         "intro": {
+            "parent": null,
+            "content": [
+               { "name": "flags" },
+               { "name": "maxSets" },
+               { "name": "poolSizeCount" }
+            ]
+         },
+         "pPoolSizes": {
+            "parent": "intro",
+            "count": "poolSizeCount",
+            "content": [
+               { "name": "type" },
+               { "name": "descriptorCount" }
+            ]
+         }
+      }
+   },
+   {
       "vk_function": "vkCreateShaderModule",
       "vgl_function": "virgl_vk_create_shader_module",
       "info_type": "VkShaderModuleCreateInfo",
@@ -99,28 +126,35 @@
       }
    },
    {
-      "vk_function": "vkCreateDescriptorPool",
-      "vgl_function": "virgl_vk_create_descriptor_pool",
-      "info_type": "VkDescriptorPoolCreateInfo",
-      "handle_type": "VkDescriptorPool",
+      "vk_function": "vkCreatePipelineLayout",
+      "vgl_function": "virgl_vk_create_pipeline_layout",
+      "info_type": "VkPipelineLayoutCreateInfo",
+      "handle_type": "VkPipelineLayout",
 
-      "id": "VCMD_VK_CREATE_DESCRIPTOR_POOL",
+      "id": "VCMD_VK_CREATE_PIPELINE_LAYOUT",
 
       "chunks": {
          "intro": {
             "parent": null,
             "content": [
                { "name": "flags" },
-               { "name": "maxSets" },
-               { "name": "poolSizeCount" }
+               { "name": "setLayoutCount" },
+               { "name": "pushConstantRangeCount" }
             ]
          },
-         "pPoolSizes": {
+         "pSetLayouts": {
             "parent": "intro",
-            "count": "poolSizeCount",
+            "count": "setLayoutCount",
             "content": [
-               { "name": "type" },
-               { "name": "descriptorCount" }
+            ]
+         },
+         "pPushConstantRanges": {
+            "parent": "intro",
+            "count": "pushConstantRangeCount",
+            "content": [
+               { "name": "stageFlags" },
+               { "name": "offset" },
+               { "name": "size" }
             ]
          }
       }

@@ -111,7 +111,8 @@ static const int (*vtest_commands[])(uint32_t length_dw) = {
     vtest_vk_create_buffer,
     vtest_vk_allocate_descriptor_sets,
     vtest_vk_create_shader_module,
-    vtest_vk_create_descriptor_pool
+    vtest_vk_create_descriptor_pool,
+    vtest_vk_create_pipeline_layout,
 #endif
 };
 

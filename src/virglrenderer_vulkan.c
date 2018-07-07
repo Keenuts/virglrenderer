@@ -393,6 +393,41 @@ int virgl_vk_create_shader_module(uint32_t device_handle,
                                handle));
 }
 
+int virgl_vk_create_pipeline_layout(uint32_t device_handle,
+                                    VkPipelineLayoutCreateInfo *info,
+                                    uint32_t *set_handles,
+                                    uint32_t *handle)
+{
+   TRACE_IN();
+
+   VkDescriptorSetLayout *layouts = NULL;
+   struct vk_device *device = NULL;
+   struct vk_descriptor_set_layout *layout = NULL;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   layouts = alloca(sizeof(*layouts) * info->setLayoutCount);
+   for (uint32_t i = 0; i < info->setLayoutCount; i++) {
+      VkDescriptorSetLayout *layout = device_get_object(device, set_handles[i]);
+      if (NULL == layout) {
+         RETURN(-1);
+      }
+      layouts[i] = *layout;
+   }
+
+   info->pSetLayouts = layouts;
+
+   RETURN(create_simple_object(device_handle,
+                               info,
+                               (PFN_vkCreateFunction)vkCreatePipelineLayout,
+                               (PFN_vkDestroyFunction)vkDestroyPipelineLayout,
+                               sizeof(VkPipelineLayout),
+                               handle));
+}
+
 int virgl_vk_create_buffer(uint32_t device_id,
 								   VkBufferCreateInfo *info,
 								   uint32_t *handle)

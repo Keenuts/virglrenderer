@@ -40,6 +40,11 @@ virgl_vk_create_shader_module(uint32_t device_handle,
                               const VkShaderModuleCreateInfo *info,
                               uint32_t *handle);
 VIRGL_EXPORT int
+virgl_vk_create_pipeline_layout(uint32_t device_handle,
+                                VkPipelineLayoutCreateInfo *info,
+                                uint32_t *set_handles,
+                                uint32_t *handle);
+VIRGL_EXPORT int
 virgl_vk_create_buffer(uint32_t device_handle,
 							  VkBufferCreateInfo *info,
 							  uint32_t *handle);

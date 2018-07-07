@@ -47,6 +47,19 @@ struct payload_create_descriptor_pool_pPoolSizes {
    uint32_t descriptorCount;
 };
 
+struct payload_create_pipeline_layout_intro {
+   uint32_t handle;
+   uint32_t flags;
+   uint32_t setLayoutCount;
+   uint32_t pushConstantRangeCount;
+};
+
+struct payload_create_pipeline_layout_pPushConstantRanges {
+   uint32_t stageFlags;
+   uint32_t offset;
+   uint32_t size;
+};
+
 int
 vtest_vk_create_descriptor_set_layout(uint32_t length_dw);
 int
@@ -57,5 +70,7 @@ int
 vtest_vk_create_shader_module(uint32_t length_dw);
 int
 vtest_vk_create_descriptor_pool(uint32_t length_dw);
+int
+vtest_vk_create_pipeline_layout(uint32_t length_dw);
 
 #endif

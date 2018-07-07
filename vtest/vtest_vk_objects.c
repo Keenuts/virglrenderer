@@ -1,3 +1,9 @@
+/*
+ * NOTICE:
+ * The code and types used here have been partialy generated.
+ * Only special cases are then fixed by hand.
+ * This will explain weirdly long type-names and some other things.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -201,6 +207,61 @@ vtest_vk_create_shader_module(uint32_t length_dw)
 
    result.error_code = virgl_vk_create_shader_module(handle, &vk_info, &result.result);
 
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   TRACE_OUT();
+   RETURN(0);
+}
+
+int
+vtest_vk_create_pipeline_layout(uint32_t length_dw)
+{
+   int res;
+   uint32_t handle;
+   struct vtest_result result;
+   VkPipelineLayoutCreateInfo vk_info;
+   uint32_t *set_handles = NULL;
+   VkPushConstantRange *vk_push_ranges = NULL;
+
+   struct payload_create_pipeline_layout_intro intro;
+   struct payload_create_pipeline_layout_pPushConstantRanges push_range;
+
+   res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
+   CHECK_IO_RESULT(res, sizeof(intro));
+
+   /* generic informations */
+   memset(&vk_info, 0, sizeof(vk_info));
+   vk_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+   vk_info.flags = intro.flags;
+   vk_info.setLayoutCount = intro.setLayoutCount;
+   vk_info.pushConstantRangeCount = intro.pushConstantRangeCount;
+
+   /* first array: VkDescriptorSetLayout */
+   set_handles = alloca(sizeof(*set_handles) * vk_info.setLayoutCount);
+   res = vtest_block_read(renderer.in_fd, set_handles,
+                          sizeof(*set_handles) * vk_info.setLayoutCount);
+   CHECK_IO_RESULT(res, sizeof(*set_handles) * vk_info.setLayoutCount);
+
+   /* second array: VkPushConstantRange */
+   vk_push_ranges = alloca(sizeof(*vk_push_ranges) * vk_info.pushConstantRangeCount);
+
+   for (uint32_t i = 0; i < vk_info.pushConstantRangeCount; i++) {
+      res = vtest_block_read(renderer.in_fd, &push_range, sizeof(push_range));
+      CHECK_IO_RESULT(res, sizeof(push_range));
+
+      vk_push_ranges[i].stageFlags = push_range.stageFlags;
+      vk_push_ranges[i].offset = push_range.offset;
+      vk_push_ranges[i].size = push_range.size;
+   }
+
+   vk_info.pPushConstantRanges = vk_push_ranges;
+
+   /* virgl forwarding */
+   result.error_code = virgl_vk_create_pipeline_layout(handle,
+                                                       &vk_info,
+                                                       set_handles,
+                                                       &result.result);
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
