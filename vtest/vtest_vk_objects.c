@@ -106,29 +106,7 @@ vtest_vk_create_descriptor_set_layout(uint32_t length_dw)
 int
 vtest_vk_create_buffer(uint32_t length_dw)
 {
-   int res;
-   uint32_t handle;
-   struct vtest_result result;
-   VkBufferCreateInfo vk_info;
-
-   struct payload_create_buffer_intro intro;
-
-   memset(&vk_info, 0, sizeof(vk_info));
-
-   res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
-   CHECK_IO_RESULT(res, sizeof(intro));
-   vk_info.flags = intro.flags;
-   vk_info.size = intro.size;
-   vk_info.usage = intro.usage;
-   vk_info.sharingMode = intro.sharingMode;
-   vk_info.queueFamilyIndexCount = intro.queueFamilyIndexCount;
-
-   result.error_code = virgl_vk_create_buffer(handle, &vk_info, &result.result);
-   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
-   CHECK_IO_RESULT(res, sizeof(result));
-
-   TRACE_OUT();
-   RETURN(0);
+   RETURN(-1);
 }
 
 /* payload:
