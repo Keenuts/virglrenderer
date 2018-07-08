@@ -22,7 +22,6 @@ int
 vtest_vk_create_descriptor_pool(uint32_t length_dw)
 {
    int res;
-   uint32_t handle;
    struct vtest_result result;
    VkDescriptorPoolCreateInfo vk_info;
 
@@ -50,7 +49,9 @@ vtest_vk_create_descriptor_pool(uint32_t length_dw)
 
    vk_info.pPoolSizes = pPoolSizes;
 
-   result.error_code = virgl_vk_create_descriptor_pool(handle, &vk_info, &result.result);
+   result.error_code = virgl_vk_create_descriptor_pool(intro.handle,
+                                                       &vk_info,
+                                                       &result.result);
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
@@ -62,7 +63,6 @@ int
 vtest_vk_create_descriptor_set_layout(uint32_t length_dw)
 {
    int res;
-   uint32_t handle;
    struct vtest_result result;
    VkDescriptorSetLayoutCreateInfo vk_info;
    VkDescriptorSetLayoutBinding *pBindings = NULL;
@@ -93,7 +93,9 @@ vtest_vk_create_descriptor_set_layout(uint32_t length_dw)
 
    vk_info.pBindings = pBindings;
 
-   result.error_code = virgl_vk_create_descriptor_set_layout(handle, &vk_info, &result.result);
+   result.error_code = virgl_vk_create_descriptor_set_layout(intro.handle,
+                                                             &vk_info,
+                                                             &result.result);
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
@@ -137,7 +139,6 @@ int
 vtest_vk_allocate_descriptor_sets(uint32_t length_dw)
 {
    int res;
-   uint32_t handle;
    struct vtest_result result;
    uint32_t pool_handle;
    uint32_t *set_layout_handles = NULL;
@@ -160,7 +161,7 @@ vtest_vk_allocate_descriptor_sets(uint32_t length_dw)
                           sizeof(uint32_t) * intro.descriptorSetCount);
 
    output_handles = alloca(sizeof(uint32_t) * intro.descriptorSetCount);
-   result.error_code = virgl_vk_allocate_descriptor_set(handle,
+   result.error_code = virgl_vk_allocate_descriptor_set(intro.handle,
                                                         pool_handle,
                                                         intro.descriptorSetCount,
                                                         set_layout_handles,
@@ -183,7 +184,6 @@ int
 vtest_vk_create_shader_module(uint32_t length_dw)
 {
    int res;
-   uint32_t handle;
    struct vtest_result result;
    VkShaderModuleCreateInfo vk_info;
    struct payload_create_shader_module_intro intro;
@@ -205,7 +205,9 @@ vtest_vk_create_shader_module(uint32_t length_dw)
 
    vk_info.pCode = shader_code;
 
-   result.error_code = virgl_vk_create_shader_module(handle, &vk_info, &result.result);
+   result.error_code = virgl_vk_create_shader_module(intro.handle,
+                                                     &vk_info,
+                                                     &result.result);
 
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
@@ -218,7 +220,6 @@ int
 vtest_vk_create_pipeline_layout(uint32_t length_dw)
 {
    int res;
-   uint32_t handle;
    struct vtest_result result;
    VkPipelineLayoutCreateInfo vk_info;
    uint32_t *set_handles = NULL;
@@ -258,7 +259,7 @@ vtest_vk_create_pipeline_layout(uint32_t length_dw)
    vk_info.pPushConstantRanges = vk_push_ranges;
 
    /* virgl forwarding */
-   result.error_code = virgl_vk_create_pipeline_layout(handle,
+   result.error_code = virgl_vk_create_pipeline_layout(intro.handle,
                                                        &vk_info,
                                                        set_handles,
                                                        &result.result);
