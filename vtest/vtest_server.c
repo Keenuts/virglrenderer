@@ -113,6 +113,7 @@ static const int (*vtest_commands[])(uint32_t length_dw) = {
     vtest_vk_create_shader_module,
     vtest_vk_create_descriptor_pool,
     vtest_vk_create_pipeline_layout,
+    vtest_vk_create_compute_pipelines,
 #endif
 };
 

@@ -428,6 +428,62 @@ int virgl_vk_create_pipeline_layout(uint32_t device_handle,
                                handle));
 }
 
+int virgl_vk_create_compute_pipelines(uint32_t device_handle,
+                                      VkComputePipelineCreateInfo *info,
+                                      uint32_t layout_handle,
+                                      uint32_t module_handle,
+                                      uint32_t *handle)
+{
+   TRACE_IN();
+
+   struct vk_device *device = NULL;
+   VkPipelineLayout *pipeline_layout = NULL;
+   VkShaderModule *shader_module = NULL;
+   VkPipeline *vk_pipeline = NULL;
+   VkResult res;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      puts("DEVICE NOT FOUND");
+      RETURN(-1);
+   }
+
+   pipeline_layout = device_get_object(device, layout_handle);
+   shader_module = device_get_object(device, module_handle);
+   if (NULL == pipeline_layout || NULL == shader_module) {
+      printf("layout handle: %d\nmodule handle: %d\n", layout_handle, module_handle);
+      RETURN(-1);
+   }
+
+   vk_pipeline = malloc(sizeof(*vk_pipeline));
+   if (NULL == vk_pipeline) {
+      RETURN(-2);
+   }
+
+   info->layout = *pipeline_layout;
+   info->stage.module = *shader_module;
+
+   res = vkCreateComputePipelines(device->vk_device,
+                                  VK_NULL_HANDLE,
+                                  1,
+                                  info,
+                                  NULL,
+                                  vk_pipeline);
+   if (VK_SUCCESS != res) {
+      free(vk_pipeline);
+      RETURN(-3);
+   }
+
+   *handle = device_insert_object(device, vk_pipeline, vkDestroyPipeline);
+   if (0 == *handle) {
+      vkDestroyPipeline(device->vk_device, *vk_pipeline, NULL);
+      free(vk_pipeline);
+   }
+
+   printf("creating object handle=%d\n", *handle);
+   RETURN(0);
+}
+
 int virgl_vk_create_buffer(uint32_t device_id,
 								   VkBufferCreateInfo *info,
 								   uint32_t *handle)

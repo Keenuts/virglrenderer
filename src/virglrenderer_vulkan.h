@@ -48,4 +48,10 @@ VIRGL_EXPORT int
 virgl_vk_create_buffer(uint32_t device_handle,
 							  VkBufferCreateInfo *info,
 							  uint32_t *handle);
+VIRGL_EXPORT int
+virgl_vk_create_compute_pipelines(uint32_t device_handle,
+                                  VkComputePipelineCreateInfo *info,
+                                  uint32_t layout_handle,
+                                  uint32_t module_handle,
+                                  uint32_t *handle);
 #endif

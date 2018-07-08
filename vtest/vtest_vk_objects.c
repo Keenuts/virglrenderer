@@ -265,6 +265,46 @@ vtest_vk_create_pipeline_layout(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
+   RETURN(0);
+}
+
+int
+vtest_vk_create_compute_pipelines(uint32_t length_dw)
+{
+   int res;
+   struct vtest_result result;
+   VkComputePipelineCreateInfo vk_info;
+   char *entrypoint_name = NULL;
+
+   struct payload_create_compute_pipelines_intro intro;
+
+   /* reading intro structure */
+   res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
+   CHECK_IO_RESULT(res, sizeof(intro));
+
+   /* reading entrypoint name */
+   entrypoint_name = alloca(intro.entrypoint_len);
+   res = vtest_block_read(renderer.in_fd, entrypoint_name, intro.entrypoint_len);
+   CHECK_IO_RESULT(res, intro.entrypoint_len);
+
+   /* setting up vk_info structure */
+   memset(&vk_info, 0, sizeof(vk_info));
+   vk_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+   vk_info.flags = intro.flags;
+   vk_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+   vk_info.stage.flags = intro.stage_flags;
+   vk_info.stage.stage = intro.stage_stage;
+   vk_info.stage.pName = entrypoint_name;
+
+   result.error_code = virgl_vk_create_compute_pipelines(intro.handle,
+                                                         &vk_info,
+                                                         intro.layout,
+                                                         intro.stage_module,
+                                                         &result.result);
+
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
    TRACE_OUT();
    RETURN(0);
 }

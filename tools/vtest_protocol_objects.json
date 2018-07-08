@@ -158,5 +158,27 @@
             ]
          }
       }
+   },
+   {
+      "vk_function": "vkCreateComputePipelines",
+      "vgl_function": "virgl_vk_create_compute_pipelines",
+      "info_type": "VkComputePipelineCreateInfo",
+      "handle_type": "VkPipeline",
+
+      "id": "VCMD_VK_CREATE_COMPUTE_PIPELINES",
+
+      "chunks": {
+         "intro": {
+            "parent": null,
+            "content": [
+               { "name": "flags" },
+               { "name": "layout" },
+               { "name": "stage_flags" },
+               { "name": "stage_stage" },
+               { "name": "stage_module" },
+               { "name": "entrypoint_len" }
+            ]
+         }
+      }
    }
 ]

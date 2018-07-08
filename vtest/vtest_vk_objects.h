@@ -60,6 +60,16 @@ struct payload_create_pipeline_layout_pPushConstantRanges {
    uint32_t size;
 };
 
+struct payload_create_compute_pipelines_intro {
+   uint32_t handle;
+   uint32_t flags;
+   uint32_t layout;
+   uint32_t stage_flags;
+   uint32_t stage_stage;
+   uint32_t stage_module;
+   uint32_t entrypoint_len;
+};
+
 int
 vtest_vk_create_descriptor_set_layout(uint32_t length_dw);
 int
@@ -72,5 +82,7 @@ int
 vtest_vk_create_descriptor_pool(uint32_t length_dw);
 int
 vtest_vk_create_pipeline_layout(uint32_t length_dw);
+int
+vtest_vk_create_compute_pipelines(uint32_t length_dw);
 
 #endif
