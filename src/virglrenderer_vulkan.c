@@ -403,7 +403,6 @@ int virgl_vk_create_pipeline_layout(uint32_t device_handle,
 
    VkDescriptorSetLayout *layouts = NULL;
    struct vk_device *device = NULL;
-   struct vk_descriptor_set_layout *layout = NULL;
 
    device = get_device_from_handle(device_handle);
    if (NULL == device) {
