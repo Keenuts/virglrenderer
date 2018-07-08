@@ -22,7 +22,7 @@ int virgl_vk_get_device_count(uint32_t *device_count)
 int virgl_vk_get_sparse_properties(uint32_t device_id,
                                    VkPhysicalDeviceSparseProperties *sparse_props)
 {
-   struct VkPhysicalDeviceProperties props;
+   VkPhysicalDeviceProperties props;
 
    TRACE_IN();
 
@@ -32,6 +32,20 @@ int virgl_vk_get_sparse_properties(uint32_t device_id,
 
    vkGetPhysicalDeviceProperties(vk_info->physical_devices[device_id], &props);
    memcpy(sparse_props, &props.sparseProperties, sizeof(*sparse_props));
+
+   RETURN(0);
+}
+
+int virgl_vk_get_memory_properties(uint32_t device_id,
+                                   VkPhysicalDeviceMemoryProperties *props)
+{
+   TRACE_IN();
+
+   if (device_id >= vk_info->physical_device_count) {
+      RETURN(-1);
+   }
+
+   vkGetPhysicalDeviceMemoryProperties(vk_info->physical_devices[device_id], props);
 
    RETURN(0);
 }

@@ -11,6 +11,8 @@ VIRGL_EXPORT int
 virgl_vk_get_sparse_properties(uint32_t device_handle,
                                VkPhysicalDeviceSparseProperties *sparse_props);
 VIRGL_EXPORT int
+virgl_vk_get_memory_properties(uint32_t device_id, VkPhysicalDeviceMemoryProperties *out);
+VIRGL_EXPORT int
 virgl_vk_get_queue_family_properties(uint32_t device_handle,
                                      uint32_t *family_count,
                                      VkQueueFamilyProperties **props);

@@ -99,6 +99,36 @@ int vtest_vk_get_queue_family_properties(uint32_t length_dw)
    RETURN(0);
 }
 
+int vtest_vk_get_device_memory_properties(uint32_t length_dw)
+{
+   struct vtest_payload_device_get payload;
+   struct vtest_result result = { 0 };
+   int res;
+
+   VkPhysicalDeviceMemoryProperties properties;
+
+   TRACE_IN();
+   UNUSED_PARAMETER(length_dw);
+
+   res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
+   CHECK_IO_RESULT(res, sizeof(payload));
+
+   res = virgl_vk_get_memory_properties(payload.device_id, &properties);
+   if (res < 0) {
+      result.error_code = -res;
+      RETURN(-1);
+   }
+
+   result.result = 0;
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   res = vtest_block_write(renderer.out_fd, &properties, sizeof(properties));
+   CHECK_IO_RESULT(res, sizeof(properties));
+
+   RETURN(0);
+}
+
 int vtest_vk_create_device(uint32_t length_dw)
 {
    VkDeviceCreateInfo         vk_device_info;;
