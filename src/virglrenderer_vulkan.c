@@ -343,6 +343,7 @@ static int create_simple_object(uint32_t device_id,
 
    *handle = device_insert_object(device, vk_handle, destroy_func);
    if (0 == *handle) {
+      destroy_func(device->vk_device, *(void**)vk_handle, NULL);
       free(vk_handle);
       RETURN(-4);
    }
