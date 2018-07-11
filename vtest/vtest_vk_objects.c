@@ -170,6 +170,7 @@ vtest_vk_create_shader_module(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(intro));
    memset(&vk_info, 0, sizeof(vk_info));
 
+   vk_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
    vk_info.flags = intro.flags;
    vk_info.codeSize = intro.codeSize;
    shader_code = malloc(vk_info.codeSize);
