@@ -103,12 +103,6 @@ vtest_vk_create_descriptor_set_layout(uint32_t length_dw)
    RETURN(0);
 }
 
-int
-vtest_vk_create_buffer(uint32_t length_dw)
-{
-   RETURN(-1);
-}
-
 /* payload:
  *    - generic pool_handle
  *    - descripor layout handles[]
@@ -153,7 +147,6 @@ vtest_vk_allocate_descriptor_sets(uint32_t length_dw)
                            sizeof(uint32_t) * result.result);
    CHECK_IO_RESULT(res, result.result * sizeof(uint32_t));
 
-   TRACE_OUT();
    RETURN(0);
 }
 
@@ -190,7 +183,6 @@ vtest_vk_create_shader_module(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
-   TRACE_OUT();
    RETURN(0);
 }
 
@@ -284,6 +276,87 @@ vtest_vk_create_compute_pipelines(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
-   TRACE_OUT();
+   RETURN(0);
+}
+
+int
+vtest_vk_allocate_memory(uint32_t length_dw)
+{
+   int res;
+   struct vtest_result result;
+   VkMemoryAllocateInfo vk_info;
+
+   struct payload_allocate_memory intro;
+
+   res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
+   CHECK_IO_RESULT(res, sizeof(intro));
+
+   memset(&vk_info, 0, sizeof(vk_info));
+   vk_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+   vk_info.allocationSize = intro.device_size;
+   vk_info.memoryTypeIndex = intro.memory_index;
+
+   result.error_code = virgl_vk_allocate_memory(intro.handle, &vk_info, &result.result);
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   RETURN(0);
+}
+
+int
+vtest_vk_create_buffer(uint32_t length_dw)
+{
+   int res;
+   struct vtest_result result;
+   VkBufferCreateInfo vk_info;
+
+   struct payload_create_buffer intro;
+
+   res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
+   CHECK_IO_RESULT(res, sizeof(intro));
+
+   memset(&vk_info, 0, sizeof(vk_info));
+   vk_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+   vk_info.flags = intro.flags;
+   vk_info.size = intro.size;
+   vk_info.usage = intro.usage;
+   vk_info.sharingMode = intro.sharingMode;
+   vk_info.queueFamilyIndexCount = intro.queueFamilyIndexCount;
+   vk_info.pQueueFamilyIndices = NULL;
+
+   if (0 != vk_info.queueFamilyIndexCount) {
+      vk_info.pQueueFamilyIndices = alloca(sizeof(uint32_t)
+                                           * vk_info.queueFamilyIndexCount);
+      res = vtest_block_read(renderer.in_fd,
+                             (void*)vk_info.pQueueFamilyIndices,
+                             sizeof(uint32_t) * vk_info.queueFamilyIndexCount);
+      CHECK_IO_RESULT(res, sizeof(uint32_t) * vk_info.queueFamilyIndexCount);
+   }
+
+   result.error_code = virgl_vk_create_buffer(intro.handle, &vk_info, &result.result);
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   RETURN(0);
+}
+
+int
+vtest_vk_bind_buffer_memory(uint32_t length_dw)
+{
+   int res;
+   struct vtest_result result;
+   struct payload_bind_buffer_memory intro;
+
+   res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
+   CHECK_IO_RESULT(res, sizeof(intro));
+
+   result.error_code = virgl_vk_bind_buffer_memory(intro.device_handle,
+                                                   intro.buffer_handle,
+                                                   intro.memory_handle,
+                                                   intro.offset);
+
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
    RETURN(0);
 }

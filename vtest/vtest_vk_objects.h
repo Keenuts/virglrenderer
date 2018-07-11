@@ -14,15 +14,6 @@ struct payload_create_descriptor_set_layout_pBindings {
    uint32_t stageFlags;
 };
 
-struct payload_create_buffer_intro {
-   uint32_t handle;
-   uint32_t flags;
-   uint64_t size;
-   uint32_t usage;
-   uint32_t sharingMode;
-   uint32_t queueFamilyIndexCount;
-};
-
 struct payload_allocate_descriptor_sets_intro {
    uint32_t handle;
    uint32_t descriptorPool;
@@ -70,10 +61,30 @@ struct payload_create_compute_pipelines_intro {
    uint32_t entrypoint_len;
 };
 
+struct payload_allocate_memory {
+   uint32_t handle;
+   uint32_t memory_index;
+   uint64_t device_size;
+};
+
+struct payload_create_buffer {
+   uint32_t handle;
+   uint32_t flags;
+   uint64_t size;
+   uint32_t usage;
+   uint32_t sharingMode;
+   uint32_t queueFamilyIndexCount;
+};
+
+struct payload_bind_buffer_memory {
+   uint32_t device_handle;
+   uint32_t buffer_handle;
+   uint32_t memory_handle;
+   uint64_t offset;
+};
+
 int
 vtest_vk_create_descriptor_set_layout(uint32_t length_dw);
-int
-vtest_vk_create_buffer(uint32_t length_dw);
 int
 vtest_vk_allocate_descriptor_sets(uint32_t length_dw);
 int
@@ -84,5 +95,11 @@ int
 vtest_vk_create_pipeline_layout(uint32_t length_dw);
 int
 vtest_vk_create_compute_pipelines(uint32_t length_dw);
+int
+vtest_vk_allocate_memory(uint32_t length_dw);
+int
+vtest_vk_create_buffer(uint32_t length_dw);
+int
+vtest_vk_bind_buffer_memory(uint32_t length_dw);
 
 #endif

@@ -47,13 +47,22 @@ virgl_vk_create_pipeline_layout(uint32_t device_handle,
                                 uint32_t *set_handles,
                                 uint32_t *handle);
 VIRGL_EXPORT int
-virgl_vk_create_buffer(uint32_t device_handle,
-							  VkBufferCreateInfo *info,
-							  uint32_t *handle);
-VIRGL_EXPORT int
 virgl_vk_create_compute_pipelines(uint32_t device_handle,
                                   VkComputePipelineCreateInfo *info,
                                   uint32_t layout_handle,
                                   uint32_t module_handle,
                                   uint32_t *handle);
+VIRGL_EXPORT int
+virgl_vk_allocate_memory(uint32_t device_handle,
+                         const VkMemoryAllocateInfo *info,
+                         uint32_t *output);
+VIRGL_EXPORT int
+virgl_vk_create_buffer(uint32_t device_handle,
+                       VkBufferCreateInfo *info,
+                       uint32_t *handle);
+VIRGL_EXPORT int
+virgl_vk_bind_buffer_memory(uint32_t device_handle,
+                            uint32_t buffer_handle,
+                            uint32_t memory_handle,
+                            uint64_t offset);
 #endif

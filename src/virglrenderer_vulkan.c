@@ -374,12 +374,13 @@ int virgl_vk_create_descriptor_pool(uint32_t device_handle,
 {
 	TRACE_IN();
 
-   RETURN(create_simple_object(device_handle,
-                               info,
-                               (PFN_vkCreateFunction)vkCreateDescriptorPool,
-                               (PFN_vkDestroyFunction)vkDestroyDescriptorPool,
-                               sizeof(VkDescriptorPool),
-                               handle));
+   int res = create_simple_object(device_handle,
+                                  info,
+                                  (PFN_vkCreateFunction)vkCreateDescriptorPool,
+                                  (PFN_vkDestroyFunction)vkDestroyDescriptorPool,
+                                  sizeof(VkDescriptorPool),
+                                  handle);
+   RETURN(res);
 }
 
 int virgl_vk_create_descriptor_set_layout(uint32_t device_handle,
@@ -388,12 +389,13 @@ int virgl_vk_create_descriptor_set_layout(uint32_t device_handle,
 {
    TRACE_IN();
 
-   RETURN(create_simple_object(device_handle,
-                               info,
-                               (PFN_vkCreateFunction)vkCreateDescriptorSetLayout,
-                               (PFN_vkDestroyFunction)vkDestroyDescriptorSetLayout,
-                               sizeof(VkDescriptorSetLayout),
-                               handle));
+   int res = create_simple_object(device_handle,
+                                  info,
+                                  (PFN_vkCreateFunction)vkCreateDescriptorSetLayout,
+                                  (PFN_vkDestroyFunction)vkDestroyDescriptorSetLayout,
+                                  sizeof(VkDescriptorSetLayout),
+                                  handle);
+   RETURN(res);
 }
 
 int virgl_vk_create_shader_module(uint32_t device_handle,
@@ -402,12 +404,13 @@ int virgl_vk_create_shader_module(uint32_t device_handle,
 {
    TRACE_IN();
 
-   RETURN(create_simple_object(device_handle,
-                               info,
-                               (PFN_vkCreateFunction)vkCreateShaderModule,
-                               (PFN_vkDestroyFunction)vkDestroyShaderModule,
-                               sizeof(VkShaderModule),
-                               handle));
+   int res = create_simple_object(device_handle,
+                                  info,
+                                  (PFN_vkCreateFunction)vkCreateShaderModule,
+                                  (PFN_vkDestroyFunction)vkDestroyShaderModule,
+                                  sizeof(VkShaderModule),
+                                  handle);
+   RETURN(res);
 }
 
 int virgl_vk_create_pipeline_layout(uint32_t device_handle,
@@ -436,12 +439,13 @@ int virgl_vk_create_pipeline_layout(uint32_t device_handle,
 
    info->pSetLayouts = layouts;
 
-   RETURN(create_simple_object(device_handle,
-                               info,
-                               (PFN_vkCreateFunction)vkCreatePipelineLayout,
-                               (PFN_vkDestroyFunction)vkDestroyPipelineLayout,
-                               sizeof(VkPipelineLayout),
-                               handle));
+   int res = create_simple_object(device_handle,
+                                  info,
+                                  (PFN_vkCreateFunction)vkCreatePipelineLayout,
+                                  (PFN_vkDestroyFunction)vkDestroyPipelineLayout,
+                                  sizeof(VkPipelineLayout),
+                                  handle);
+   RETURN(res);
 }
 
 int virgl_vk_create_compute_pipelines(uint32_t device_handle,
@@ -500,17 +504,66 @@ int virgl_vk_create_compute_pipelines(uint32_t device_handle,
    RETURN(0);
 }
 
-int virgl_vk_create_buffer(uint32_t device_id,
-								   VkBufferCreateInfo *info,
-								   uint32_t *handle)
+int virgl_vk_allocate_memory(uint32_t device_handle,
+                             const VkMemoryAllocateInfo *info,
+                             uint32_t *output)
+{
+   TRACE_IN();
+
+   int res = create_simple_object(device_handle,
+                                  info,
+                                  (PFN_vkCreateFunction)vkAllocateMemory,
+                                  (PFN_vkDestroyFunction)vkFreeMemory,
+                                  sizeof(VkDeviceMemory),
+                                  output);
+   RETURN(res);
+}
+
+int virgl_vk_create_buffer(uint32_t device_handle,
+                           VkBufferCreateInfo *info,
+                           uint32_t *handle)
 {
 	TRACE_IN();
 
-   UNUSED_PARAMETER(device_id);
-   UNUSED_PARAMETER(info);
-   UNUSED_PARAMETER(handle);
+   int res = create_simple_object(device_handle,
+                                  info,
+                                  (PFN_vkCreateFunction)vkCreateBuffer,
+                                  (PFN_vkDestroyFunction)vkDestroyBuffer,
+                                  sizeof(VkBuffer),
+                                  handle);
+   RETURN(res);
+}
 
-	puts("CREATING BUFFER");
-	*handle = 1;
-	RETURN(-1);
+int virgl_vk_bind_buffer_memory(uint32_t device_handle,
+                                uint32_t buffer_handle,
+                                uint32_t memory_handle,
+                                uint64_t offset)
+{
+   TRACE_IN();
+
+   VkResult res;
+   struct vk_device *device = NULL;
+   VkBuffer *vk_buffer = NULL;
+   VkDeviceMemory *vk_memory = NULL;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      DEBUG_ERR("Device not found.");
+      RETURN(-1);
+   }
+
+   vk_buffer = device_get_object(device, buffer_handle);
+   vk_memory = device_get_object(device, memory_handle);
+   if (NULL == vk_buffer || NULL == vk_memory) {
+      DEBUG_ERR("Unknown handles.");
+      RETURN(-2);
+   }
+
+   res = vkBindBufferMemory(device->vk_device, *vk_buffer, *vk_memory, offset);
+   if (VK_SUCCESS != res) {
+      DEBUG_ERR("VkBindBufferMemoru failed: %s", vkresult_to_string(res));
+      RETURN(-3);
+   }
+
+   RETURN(0);
 }

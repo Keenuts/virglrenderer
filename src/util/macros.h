@@ -25,8 +25,8 @@
 
 #endif
 
-#define RETURN(...)         \
-    TRACE_OUT(__VA_ARGS__); \
-    return __VA_ARGS__
+#define RETURN(Value)         \
+   TRACE_OUT(Value);          \
+   return Value;
 
 #endif

@@ -27,29 +27,6 @@
       }
    },
    {
-      "vk_function": "vkCreateBuffer",
-      "vgl_function": "virgl_vk_create_buffer",
-      "info_type": "VkBufferCreateInfo",
-      "handle_type": "VkBuffer",
-      "id": "VCMD_VK_CREATE_BUFFER",
-
-      "chunks": {
-          "intro": {
-              "parent": null,
-              "content": [
-                { "name": "flags" },
-                {
-                    "name": "size",
-                    "type": "uint64_t"
-                },
-                { "name": "usage" },
-                { "name": "sharingMode" },
-                { "name": "queueFamilyIndexCount" }
-              ]
-          }
-      }
-   },
-   {
       "vk_function": "vkAllocateDescriptorSets",
       "vgl_function": "virgl_vk_allocate_descriptor_set",
       "info_type": "VkDescriptorSet",
@@ -177,6 +154,73 @@
                { "name": "stage_stage" },
                { "name": "stage_module" },
                { "name": "entrypoint_len" }
+            ]
+         }
+      }
+   },
+   {
+      "vk_function": "vkAllocateMemory",
+      "vgl_function": "virgl_vk_allocate_memory",
+      "info_type": "VkMemoryAllocateInfo",
+      "handle_type": "VkDeviceMemory",
+
+      "id": "VCMD_VK_ALLOCATE_MEMORY",
+
+      "chunks": {
+         "intro": {
+            "parent": null,
+            "content": [
+               { "name": "memory_index" },
+               {
+                  "name": "device_size",
+                  "type": "uint64_t"
+               }
+            ]
+         }
+      }
+   },
+   {
+      "vk_function": "vkCreateBuffer",
+      "vgl_function": "virgl_vk_create_buffer",
+      "info_type": "VkBufferCreateInfo",
+      "handle_type": "VkBuffer",
+      "id": "VCMD_VK_CREATE_BUFFER",
+
+      "chunks": {
+          "intro": {
+              "parent": null,
+              "content": [
+                { "name": "flags" },
+                {
+                    "name": "size",
+                    "type": "uint64_t"
+                },
+                { "name": "usage" },
+                { "name": "sharingMode" },
+                { "name": "queueFamilyIndexCount" }
+              ]
+          }
+      }
+   },
+   {
+      "vk_function": "vkBindBufferMemory",
+      "vgl_function": "virgl_vk_bind_buffer_memory",
+      "info_type": "//FIXME: no info-type",
+      "handle_type": "//FIXME: no handle",
+
+      "id": "VCMD_VK_BIND_BUFFER_MEMORY",
+
+      "chunks": {
+         "intro": {
+            "parent": null,
+            "content": [
+               { "name": "device_handle" },
+               { "name": "buffer_handle" },
+               { "name": "memory_handle" },
+               {
+                  "name": "offset",
+                  "type": "uint64_t"
+               }
             ]
          }
       }

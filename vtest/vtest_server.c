@@ -115,6 +115,8 @@ static const int (*vtest_commands[])(uint32_t length_dw) = {
     vtest_vk_create_pipeline_layout,
     vtest_vk_create_compute_pipelines,
     vtest_vk_get_device_memory_properties,
+    vtest_vk_allocate_memory,
+    vtest_vk_bind_buffer_memory,
 #endif
 };
 
