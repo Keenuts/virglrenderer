@@ -10,82 +10,7 @@
 #include "util/u_pointer.h"
 #include "virgl_vk.h"
 
-int virgl_vk_get_device_count(uint32_t *device_count)
-{
-   TRACE_IN();
-
-   *device_count = vk_info->physical_device_count;
-
-   RETURN(0);
-}
-
-int virgl_vk_get_sparse_properties(uint32_t device_id,
-                                   VkPhysicalDeviceSparseProperties *sparse_props)
-{
-   VkPhysicalDeviceProperties props;
-
-   TRACE_IN();
-
-   if (device_id >= vk_info->physical_device_count) {
-      RETURN(-1);
-   }
-
-   vkGetPhysicalDeviceProperties(vk_info->physical_devices[device_id], &props);
-   memcpy(sparse_props, &props.sparseProperties, sizeof(*sparse_props));
-
-   RETURN(0);
-}
-
-int virgl_vk_get_memory_properties(uint32_t device_id,
-                                   VkPhysicalDeviceMemoryProperties *props)
-{
-   TRACE_IN();
-
-   if (device_id >= vk_info->physical_device_count) {
-      RETURN(-1);
-   }
-
-   vkGetPhysicalDeviceMemoryProperties(vk_info->physical_devices[device_id], props);
-
-   RETURN(0);
-}
-
-static VkPhysicalDevice get_physical_device(uint32_t id)
-{
-   TRACE_IN();
-
-   if (id >= vk_info->physical_device_count) {
-      RETURN(VK_NULL_HANDLE);
-   }
-
-   RETURN(vk_info->physical_devices[id]);
-}
-
-int virgl_vk_get_queue_family_properties(uint32_t device_id,
-                                         uint32_t *family_count,
-                                         VkQueueFamilyProperties **props)
-{
-   VkPhysicalDevice dev;
-
-   TRACE_IN();
-
-   dev = get_physical_device(device_id);
-   if (dev == VK_NULL_HANDLE) {
-      RETURN(-1);
-   }
-
-   vkGetPhysicalDeviceQueueFamilyProperties(dev, family_count, NULL);
-
-   *props = malloc(sizeof(VkQueueFamilyProperties) * *family_count);
-   if (*props == NULL) {
-      *family_count = 0;
-      RETURN(-1);
-   }
-
-   vkGetPhysicalDeviceQueueFamilyProperties(dev, family_count, *props);
-
-   RETURN(0);
-}
+/* functions used in the device's hashtable */
 
 /* reusing the same function as vrend does.*/
 static unsigned hash_func(void *key)
@@ -112,7 +37,25 @@ static void vkobj_free(void *handle)
    free(obj);
 }
 
-static struct vk_device* get_device_from_handle(uint32_t handle)
+
+/* helper functions */
+
+/* Get a physical device from a VGL-HANDLE */
+static VkPhysicalDevice
+get_physical_device_from_handle(uint32_t handle)
+{
+   TRACE_IN();
+
+   if (handle >= vk_info->physical_device_count) {
+      RETURN(VK_NULL_HANDLE);
+   }
+
+   RETURN(vk_info->physical_devices[handle]);
+}
+
+/* Get a logical device from a VGL-HANDLE */
+static struct vk_device*
+get_device_from_handle(uint32_t handle)
 {
    uint32_t max_device = list_length(&vk_info->devices->list);
    if (handle >= max_device) {
@@ -129,6 +72,7 @@ static struct vk_device* get_device_from_handle(uint32_t handle)
    return it;
 }
 
+/* Insert a vgl object into a logical device. Generates the VGL-HANDLE */
 static uint32_t
 device_insert_object(struct vk_device *dev, void *vk_handle, void *callback)
 {
@@ -149,6 +93,7 @@ device_insert_object(struct vk_device *dev, void *vk_handle, void *callback)
    return object->handle;
 }
 
+/* get an vgl-object from the hashtable using a VGL-HANDLE */
 static void*
 device_get_object(struct vk_device *dev, uint32_t handle)
 {
@@ -161,10 +106,67 @@ device_get_object(struct vk_device *dev, uint32_t handle)
    return object->vk_handle;
 }
 
+/* removes an object from the hashtable */
+/* cleanup is done by the hashtable */
 static void
 device_remove_object(struct vk_device *dev, uint32_t handle)
 {
    util_hash_table_remove(dev->objects, &handle);
+}
+
+
+/* Helper to create and insert a simple object
+ * object creation has to follow the protptype:
+ *    VkResult create_func(VkDevice, const VkXXXInfo *, const VkAlloc...);
+ *
+ *    The object is inserted and the handle generated on success
+ */
+typedef VkResult (*PFN_vkCreateFunction)(VkDevice,
+                                         const void*,
+                                         const VkAllocationCallbacks*,
+                                         void*);
+typedef void (*PFN_vkDestroyFunction)(VkDevice, void*, const VkAllocationCallbacks*);
+
+static int create_simple_object(uint32_t device_id,
+                                const void* create_info,
+                                PFN_vkCreateFunction create_func,
+                                PFN_vkDestroyFunction destroy_func,
+                                size_t vk_handle_size,
+                                uint32_t *handle)
+{
+	TRACE_IN();
+
+   struct vk_device *device = NULL;
+   struct vk_handle *vk_handle = NULL;
+   VkResult res;
+
+   device = get_device_from_handle(device_id);
+   if (NULL == device) {
+      DEBUG_ERR("invalid device for handle %u\n", device_id);
+      RETURN(-1);
+   }
+
+   vk_handle = calloc(1, vk_handle_size);
+   if (NULL == vk_handle) {
+      RETURN(-2);
+   }
+
+   res = create_func(device->vk_device, create_info, NULL, &vk_handle->content);
+   if (VK_SUCCESS != res) {
+      DEBUG_ERR("vk call failed %s\n", vkresult_to_string(res));
+      free(vk_handle);
+      RETURN(-3);
+   }
+
+   *handle = device_insert_object(device, vk_handle, destroy_func);
+   if (0 == *handle) {
+      destroy_func(device->vk_device, vk_handle->content, NULL);
+      free(vk_handle);
+      RETURN(-4);
+   }
+
+   printf("creating object handle=%d\n", *handle);
+	RETURN(0);
 }
 
 static int initialize_vk_device(VkDevice dev,
@@ -217,6 +219,74 @@ static int initialize_vk_device(VkDevice dev,
    return 0;
 }
 
+
+int virgl_vk_get_device_count(uint32_t *device_count)
+{
+   TRACE_IN();
+
+   *device_count = vk_info->physical_device_count;
+
+   RETURN(0);
+}
+
+int virgl_vk_get_sparse_properties(uint32_t device_id,
+                                   VkPhysicalDeviceSparseProperties *sparse_props)
+{
+   VkPhysicalDeviceProperties props;
+
+   TRACE_IN();
+
+   if (device_id >= vk_info->physical_device_count) {
+      RETURN(-1);
+   }
+
+   vkGetPhysicalDeviceProperties(vk_info->physical_devices[device_id], &props);
+   memcpy(sparse_props, &props.sparseProperties, sizeof(*sparse_props));
+
+   RETURN(0);
+}
+
+int virgl_vk_get_memory_properties(uint32_t device_id,
+                                   VkPhysicalDeviceMemoryProperties *props)
+{
+   TRACE_IN();
+
+   if (device_id >= vk_info->physical_device_count) {
+      RETURN(-1);
+   }
+
+   memset(props, 0, sizeof(*props));
+   vkGetPhysicalDeviceMemoryProperties(vk_info->physical_devices[device_id], props);
+
+   RETURN(0);
+}
+
+int virgl_vk_get_queue_family_properties(uint32_t device_id,
+                                         uint32_t *family_count,
+                                         VkQueueFamilyProperties **props)
+{
+   VkPhysicalDevice dev;
+
+   TRACE_IN();
+
+   dev = get_physical_device_from_handle(device_id);
+   if (dev == VK_NULL_HANDLE) {
+      RETURN(-1);
+   }
+
+   vkGetPhysicalDeviceQueueFamilyProperties(dev, family_count, NULL);
+
+   *props = malloc(sizeof(VkQueueFamilyProperties) * *family_count);
+   if (*props == NULL) {
+      *family_count = 0;
+      RETURN(-1);
+   }
+
+   vkGetPhysicalDeviceQueueFamilyProperties(dev, family_count, *props);
+
+   RETURN(0);
+}
+
 int virgl_vk_create_device(uint32_t phys_device_id,
                            const VkDeviceCreateInfo *info,
                            uint32_t *device_id)
@@ -227,7 +297,7 @@ int virgl_vk_create_device(uint32_t phys_device_id,
    VkResult res;
    VkPhysicalDevice physical_dev;
 
-   physical_dev = get_physical_device(phys_device_id);
+   physical_dev = get_physical_device_from_handle(phys_device_id);
    if (physical_dev == VK_NULL_HANDLE) {
       RETURN(-1);
    }
@@ -252,43 +322,45 @@ int virgl_vk_allocate_descriptor_set(uint32_t device_handle,
                                      uint32_t *handles)
 {
    TRACE_IN();
-   struct vk_device *device = NULL;
-   VkDescriptorPool *vk_pool;
-
-   VkDescriptorSetLayout *vk_layouts = NULL;
+   vk_device_t *device = NULL;
+   vk_descriptor_pool_t *pool = NULL;
+   vk_descriptor_set_layout_t *layout = NULL;
+   vk_descriptor_set_t *sets= NULL;
    VkDescriptorSet *vk_sets = NULL;
+   VkDescriptorSetLayout *vk_layouts = NULL;
+
    VkDescriptorSetAllocateInfo vk_info;
    VkResult res;
 
    device = get_device_from_handle(device_handle);
-   vk_pool = device_get_object(device, pool_handle);
-   if (NULL == device || NULL == vk_pool) {
+   pool = device_get_object(device, pool_handle);
+   if (NULL == device || NULL == pool) {
       RETURN(-1);
    }
 
-   vk_sets = malloc(sizeof(*vk_sets) * descriptor_count);
-   vk_layouts = malloc(sizeof(*vk_layouts) * descriptor_count);
-   if (NULL == vk_sets || NULL == vk_layouts) {
-      free(vk_sets);
-      free(vk_layouts);
+   vk_layouts = alloca(sizeof(*vk_layouts) * descriptor_count);
+   vk_sets = alloca(sizeof(*vk_sets) * descriptor_count);
+
+   sets = malloc(sizeof(*sets) * descriptor_count);
+   if (NULL == sets) {
+      free(sets);
       RETURN(-2);
    }
 
    for (uint32_t i = 0; i < descriptor_count; i++) {
-      VkDescriptorSetLayout *ptr = device_get_object(device, desc_layout_ids[i]);
-      if (NULL != ptr) {
-         vk_layouts[i] = *ptr;
+      layout = device_get_object(device, desc_layout_ids[i]);
+      if (NULL != layout) {
+         vk_layouts[i] = layout->handle;
          continue;
       }
 
-      free(vk_sets);
-      free(vk_layouts);
-      RETURN(-9);
+      free(sets);
+      RETURN(-3);
    }
 
    vk_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
    vk_info.pNext = NULL;
-   vk_info.descriptorPool = *vk_pool;
+   vk_info.descriptorPool = pool->handle;
    vk_info.descriptorSetCount = descriptor_count;
    vk_info.pSetLayouts = vk_layouts;
 
@@ -296,12 +368,13 @@ int virgl_vk_allocate_descriptor_set(uint32_t device_handle,
                                   &vk_info,
                                   vk_sets);
    if (VK_SUCCESS != res) {
-      free(vk_sets);
-      RETURN(-3);
+      free(sets);
+      RETURN(-4);
    }
 
    for (uint32_t i = 0; i < descriptor_count; i++) {
-      handles[i] = device_insert_object(device, vk_sets + i, vkDestroyDescriptorPool);
+      sets[i].handle = vk_sets[i];
+      handles[i] = device_insert_object(device, sets + i, vkFreeDescriptorSets);
       if (0 != handles[i]) {
          /* success path */
          continue;
@@ -309,63 +382,13 @@ int virgl_vk_allocate_descriptor_set(uint32_t device_handle,
 
       /* If an error occured, clean-up old handles, and exit */
       for (uint32_t j = i; j > 0; j++) {
+         vkFreeDescriptorSets(device->vk_device, pool->handle, 1, &sets[i].handle);
          device_remove_object(device, handles[j - 1]);
       }
-      RETURN(-4);
+      RETURN(-5);
    }
 
    RETURN(0);
-}
-
-typedef VkResult (*PFN_vkCreateFunction)(VkDevice,
-                                         const void*,
-                                         const VkAllocationCallbacks*,
-                                         void*);
-
-typedef void (*PFN_vkDestroyFunction)(VkDevice,
-                                      void*,
-                                      const VkAllocationCallbacks*);
-
-static int create_simple_object(uint32_t device_id,
-                                const void* create_info,
-                                PFN_vkCreateFunction create_func,
-                                PFN_vkDestroyFunction destroy_func,
-                                size_t vk_handle_size,
-                                uint32_t *handle)
-{
-	TRACE_IN();
-
-   struct vk_device *device = NULL;
-   void *vk_handle = NULL;
-   VkResult res;
-
-   device = get_device_from_handle(device_id);
-   if (NULL == device) {
-      DEBUG_ERR("invalid device for handle %u\n", device_id);
-      RETURN(-1);
-   }
-
-   vk_handle = malloc(vk_handle_size);
-   if (NULL == vk_handle) {
-      RETURN(-2);
-   }
-
-   res = create_func(device->vk_device, create_info, NULL, vk_handle);
-   if (VK_SUCCESS != res) {
-      DEBUG_ERR("vk call failed %s\n", vkresult_to_string(res));
-      free(vk_handle);
-      RETURN(-3);
-   }
-
-   *handle = device_insert_object(device, vk_handle, destroy_func);
-   if (0 == *handle) {
-      destroy_func(device->vk_device, *(void**)vk_handle, NULL);
-      free(vk_handle);
-      RETURN(-4);
-   }
-
-   printf("creating object handle=%d\n", *handle);
-	RETURN(0);
 }
 
 int virgl_vk_create_descriptor_pool(uint32_t device_handle,
@@ -378,7 +401,7 @@ int virgl_vk_create_descriptor_pool(uint32_t device_handle,
                                   info,
                                   (PFN_vkCreateFunction)vkCreateDescriptorPool,
                                   (PFN_vkDestroyFunction)vkDestroyDescriptorPool,
-                                  sizeof(VkDescriptorPool),
+                                  sizeof(vk_descriptor_pool_t),
                                   handle);
    RETURN(res);
 }
@@ -393,7 +416,7 @@ int virgl_vk_create_descriptor_set_layout(uint32_t device_handle,
                                   info,
                                   (PFN_vkCreateFunction)vkCreateDescriptorSetLayout,
                                   (PFN_vkDestroyFunction)vkDestroyDescriptorSetLayout,
-                                  sizeof(VkDescriptorSetLayout),
+                                  sizeof(vk_descriptor_set_layout_t),
                                   handle);
    RETURN(res);
 }
@@ -408,7 +431,7 @@ int virgl_vk_create_shader_module(uint32_t device_handle,
                                   info,
                                   (PFN_vkCreateFunction)vkCreateShaderModule,
                                   (PFN_vkDestroyFunction)vkDestroyShaderModule,
-                                  sizeof(VkShaderModule),
+                                  sizeof(vk_shader_module_t),
                                   handle);
    RETURN(res);
 }
@@ -420,7 +443,8 @@ int virgl_vk_create_pipeline_layout(uint32_t device_handle,
 {
    TRACE_IN();
 
-   VkDescriptorSetLayout *layouts = NULL;
+   VkDescriptorSetLayout *vk_layouts = NULL;
+   vk_descriptor_set_layout_t *layout = NULL;
    struct vk_device *device = NULL;
 
    device = get_device_from_handle(device_handle);
@@ -428,22 +452,22 @@ int virgl_vk_create_pipeline_layout(uint32_t device_handle,
       RETURN(-1);
    }
 
-   layouts = alloca(sizeof(*layouts) * info->setLayoutCount);
+   vk_layouts = alloca(sizeof(*vk_layouts) * info->setLayoutCount);
    for (uint32_t i = 0; i < info->setLayoutCount; i++) {
-      VkDescriptorSetLayout *layout = device_get_object(device, set_handles[i]);
+      layout = device_get_object(device, set_handles[i]);
       if (NULL == layout) {
          RETURN(-1);
       }
-      layouts[i] = *layout;
+      vk_layouts[i] = layout->handle;
    }
 
-   info->pSetLayouts = layouts;
+   info->pSetLayouts = vk_layouts;
 
    int res = create_simple_object(device_handle,
                                   info,
                                   (PFN_vkCreateFunction)vkCreatePipelineLayout,
                                   (PFN_vkDestroyFunction)vkDestroyPipelineLayout,
-                                  sizeof(VkPipelineLayout),
+                                  sizeof(vk_pipeline_layout_t),
                                   handle);
    RETURN(res);
 }
@@ -457,47 +481,46 @@ int virgl_vk_create_compute_pipelines(uint32_t device_handle,
    TRACE_IN();
 
    struct vk_device *device = NULL;
-   VkPipelineLayout *pipeline_layout = NULL;
-   VkShaderModule *shader_module = NULL;
-   VkPipeline *vk_pipeline = NULL;
+   vk_pipeline_layout_t *pipeline_layout = NULL;
+   vk_shader_module_t *shader_module = NULL;
+
+   vk_pipeline_t *pipeline = NULL;
    VkResult res;
 
    device = get_device_from_handle(device_handle);
    if (NULL == device) {
-      puts("DEVICE NOT FOUND");
       RETURN(-1);
    }
 
    pipeline_layout = device_get_object(device, layout_handle);
    shader_module = device_get_object(device, module_handle);
    if (NULL == pipeline_layout || NULL == shader_module) {
-      printf("layout handle: %d\nmodule handle: %d\n", layout_handle, module_handle);
       RETURN(-1);
    }
 
-   vk_pipeline = malloc(sizeof(*vk_pipeline));
-   if (NULL == vk_pipeline) {
+   pipeline = malloc(sizeof(*pipeline));
+   if (NULL == pipeline) {
       RETURN(-2);
    }
 
-   info->layout = *pipeline_layout;
-   info->stage.module = *shader_module;
+   info->layout = pipeline_layout->handle;
+   info->stage.module = shader_module->handle;
 
    res = vkCreateComputePipelines(device->vk_device,
                                   VK_NULL_HANDLE,
                                   1,
                                   info,
                                   NULL,
-                                  vk_pipeline);
+                                  &pipeline->handle);
    if (VK_SUCCESS != res) {
-      free(vk_pipeline);
+      free(pipeline);
       RETURN(-3);
    }
 
-   *handle = device_insert_object(device, vk_pipeline, vkDestroyPipeline);
+   *handle = device_insert_object(device, pipeline, vkDestroyPipeline);
    if (0 == *handle) {
-      vkDestroyPipeline(device->vk_device, *vk_pipeline, NULL);
-      free(vk_pipeline);
+      vkDestroyPipeline(device->vk_device, pipeline->handle, NULL);
+      free(pipeline);
    }
 
    printf("creating object handle=%d\n", *handle);
@@ -514,7 +537,7 @@ int virgl_vk_allocate_memory(uint32_t device_handle,
                                   info,
                                   (PFN_vkCreateFunction)vkAllocateMemory,
                                   (PFN_vkDestroyFunction)vkFreeMemory,
-                                  sizeof(VkDeviceMemory),
+                                  sizeof(vk_device_memory_t),
                                   output);
    RETURN(res);
 }
@@ -529,7 +552,7 @@ int virgl_vk_create_buffer(uint32_t device_handle,
                                   info,
                                   (PFN_vkCreateFunction)vkCreateBuffer,
                                   (PFN_vkDestroyFunction)vkDestroyBuffer,
-                                  sizeof(VkBuffer),
+                                  sizeof(vk_buffer_t),
                                   handle);
    RETURN(res);
 }
@@ -543,21 +566,21 @@ int virgl_vk_bind_buffer_memory(uint32_t device_handle,
 
    VkResult res;
    struct vk_device *device = NULL;
-   VkBuffer *vk_buffer = NULL;
-   VkDeviceMemory *vk_memory = NULL;
+   vk_buffer_t *buffer = NULL;
+   vk_device_memory_t *memory = NULL;
 
    device = get_device_from_handle(device_handle);
    if (NULL == device) {
       RETURN(-1);
    }
 
-   vk_buffer = device_get_object(device, buffer_handle);
-   vk_memory = device_get_object(device, memory_handle);
-   if (NULL == vk_buffer || NULL == vk_memory) {
+   buffer = device_get_object(device, buffer_handle);
+   memory = device_get_object(device, memory_handle);
+   if (NULL == buffer || NULL == memory) {
       RETURN(-2);
    }
 
-   res = vkBindBufferMemory(device->vk_device, *vk_buffer, *vk_memory, offset);
+   res = vkBindBufferMemory(device->vk_device, buffer->handle, memory->handle, offset);
    if (VK_SUCCESS != res) {
       DEBUG_ERR("VkBindBufferMemoru failed: %s", vkresult_to_string(res));
       RETURN(-3);
@@ -573,31 +596,71 @@ int virgl_vk_write_descriptor_set(uint32_t device_handle,
                                   uint32_t *buffer_handles)
 {
    struct vk_device *device = NULL;
-   VkDescriptorSet *vk_set = NULL;
-   VkBuffer *vk_buffer = NULL;
+   vk_descriptor_set_t *set = NULL;
+   vk_buffer_t *buffer = NULL;
 
    device = get_device_from_handle(device_handle);
    if (NULL == device) {
       RETURN(-1);
    }
 
-   vk_set = device_get_object(device, descriptor_handle);
-   if (NULL == vk_set) {
+   set = device_get_object(device, descriptor_handle);
+   if (NULL == set) {
       RETURN(-2);
    }
 
    for (uint32_t i = 0; i < write_info->descriptorCount; i++) {
-      vk_buffer = device_get_object(device, buffer_handles[i]);
-      if (NULL == vk_buffer) {
+      buffer = device_get_object(device, buffer_handles[i]);
+      if (NULL == buffer) {
          RETURN(-2);
       }
 
-      buffer_info[i].buffer = *vk_buffer;
+      buffer_info[i].buffer = buffer->handle;
    }
 
-   write_info->dstSet = *vk_set;
+   write_info->dstSet = set->handle;
    write_info->pBufferInfo = buffer_info;
 
    vkUpdateDescriptorSets(device->vk_device, 1, write_info, 0, NULL);
    RETURN(0);
+}
+
+int virgl_vk_is_memory_cached(uint32_t device_handle,
+                              uint32_t memory_handle,
+                              uint8_t *output)
+{
+   UNUSED_PARAMETER(device_handle);
+   UNUSED_PARAMETER(memory_handle);
+   UNUSED_PARAMETER(output);
+   return 0;
+}
+
+int virgl_vk_invalidate_memory(uint32_t device_handle,
+                               uint32_t memory_handle)
+{
+   UNUSED_PARAMETER(device_handle);
+   UNUSED_PARAMETER(memory_handle);
+   return 0;
+}
+
+int virgl_vk_map_memory(uint32_t device_handle,
+                        uint32_t memory_handle,
+                        uint32_t offset,
+                        uint32_t size,
+                        void **ptr)
+{
+   UNUSED_PARAMETER(device_handle);
+   UNUSED_PARAMETER(memory_handle);
+   UNUSED_PARAMETER(offset);
+   UNUSED_PARAMETER(size);
+   UNUSED_PARAMETER(ptr);
+   return 0;
+}
+
+int virgl_vk_unmap_memory(uint32_t device_handle,
+                          uint32_t memory_handle)
+{
+   UNUSED_PARAMETER(device_handle);
+   UNUSED_PARAMETER(memory_handle);
+   return 0;
 }

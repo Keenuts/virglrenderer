@@ -72,4 +72,24 @@ virgl_vk_write_descriptor_set(uint32_t device_handle,
                               VkDescriptorBufferInfo *buffer_info,
                               uint32_t descriptor_handle,
                               uint32_t *buffer_handles);
+
+VIRGL_EXPORT int
+virgl_vk_is_memory_cached(uint32_t device_handle,
+                          uint32_t memory_handle,
+                          uint8_t *output);
+
+VIRGL_EXPORT int
+virgl_vk_invalidate_memory(uint32_t device_handle,
+                           uint32_t memory_handle);
+
+VIRGL_EXPORT int
+virgl_vk_map_memory(uint32_t device_handle,
+                    uint32_t memory_handle,
+                    uint32_t offset,
+                    uint32_t size,
+                    void **ptr);
+
+VIRGL_EXPORT int
+virgl_vk_unmap_memory(uint32_t device_handle,
+                      uint32_t memory_handle);
 #endif

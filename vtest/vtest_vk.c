@@ -190,3 +190,66 @@ int vtest_vk_create_device(uint32_t length_dw)
 
    RETURN(0);
 }
+
+int vtest_vk_read_memory(uint32_t length_dw)
+{
+   TRACE_IN();
+
+   int res = 0;
+   int cached;
+   struct vtest_result result;
+   struct vtest_payload_rw_memory info;
+   void *data = NULL;
+
+   res = vtest_block_read(renderer.in_fd, &info, sizeof(info));
+   CHECK_IO_RESULT(res, sizeof(info));
+
+   do {
+      res = virgl_vk_map_memory(info.device_handle,
+                                info.memory_handle,
+                                info.offset,
+                                info.size,
+                                &data);
+      if (0 > res) {
+         break;
+      }
+
+      res = virgl_vk_is_memory_cached(info.device_handle, info.memory_handle, &cached);
+      if (0 > res) {
+         break;
+      }
+
+      if (cached) {
+         res = virgl_vk_invalidate_memory(info.device_handle, info.memory_handle);
+         if (0 > res) {
+            break;
+         }
+      }
+
+      res = vtest_block_read(renderer.out_fd, data, info.size);
+      if (0 > res) {
+         break;
+      }
+
+      res = virgl_vk_unmap_memory(info.device_handle, info.memory_handle);
+      if (0 > res) {
+         break;
+      }
+   } while (0);
+
+   result.error_code = res;
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+   UNUSED_PARAMETER(length_dw);
+
+   RETURN(0);
+}
+
+int vtest_vk_write_memory(uint32_t length_dw)
+{
+   TRACE_IN();
+
+   UNUSED_PARAMETER(length_dw);
+
+   RETURN(0);
+}
