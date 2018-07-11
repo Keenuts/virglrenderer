@@ -65,4 +65,11 @@ virgl_vk_bind_buffer_memory(uint32_t device_handle,
                             uint32_t buffer_handle,
                             uint32_t memory_handle,
                             uint64_t offset);
+
+VIRGL_EXPORT int
+virgl_vk_write_descriptor_set(uint32_t device_handle,
+                              VkWriteDescriptorSet *write_info,
+                              VkDescriptorBufferInfo *buffer_info,
+                              uint32_t descriptor_handle,
+                              uint32_t *buffer_handles);
 #endif

@@ -83,6 +83,21 @@ struct payload_bind_buffer_memory {
    uint64_t offset;
 };
 
+struct payload_write_descriptor_set_intro {
+   uint32_t device_handle;
+   uint32_t dstSet;
+   uint32_t dstBinding;
+   uint32_t dstArrayElement;
+   uint32_t descriptorType;
+   uint32_t descriptorCount;
+};
+
+struct payload_write_descriptor_set_buffer {
+   uint32_t buffer_handle;
+   uint64_t offset;
+   uint64_t range;
+};
+
 int
 vtest_vk_create_descriptor_set_layout(uint32_t length_dw);
 int
@@ -101,5 +116,7 @@ int
 vtest_vk_create_buffer(uint32_t length_dw);
 int
 vtest_vk_bind_buffer_memory(uint32_t length_dw);
+int
+vtest_vk_write_descriptor_set(uint32_t length_dw);
 
 #endif

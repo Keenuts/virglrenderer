@@ -224,5 +224,42 @@
             ]
          }
       }
+   },
+   {
+      "vk_function": "vkUpdateDescriptorSets",
+      "vgl_function": "virgl_vk_write_descriptor_set",
+      "info_type": "VkWriteDescriptorSet",
+      "handle_type": "/FIXME: no output handle",
+
+      "id": "VCMD_VK_WRITE_DESCRIPTOR_SET",
+
+      "chunks": {
+         "intro": {
+            "parent": null,
+            "content": [
+               { "name": "device_handle" },
+               { "name": "dstSet" },
+               { "name": "dstBinding" },
+               { "name": "dstArrayElement" },
+               { "name": "descriptorType" },
+               { "name": "descriptorCount" }
+            ]
+         },
+         "pBufferInfo": {
+            "parent": "intro",
+            "count": "descriptorCount",
+            "content": [
+               { "name": "buffer_handle" },
+               {
+                  "name": "offset",
+                  "type": "uint64_t"
+               },
+               {
+                  "name": "range",
+                  "type": "uint64_t"
+               }
+            ]
+         }
+      }
    }
 ]

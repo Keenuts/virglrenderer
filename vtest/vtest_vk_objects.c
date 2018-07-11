@@ -360,3 +360,51 @@ vtest_vk_bind_buffer_memory(uint32_t length_dw)
 
    RETURN(0);
 }
+
+int
+vtest_vk_write_descriptor_set(uint32_t length_dw)
+{
+   int res;
+   struct vtest_result result;
+   VkWriteDescriptorSet vk_info;
+   VkDescriptorBufferInfo *pBufferInfo = NULL;
+
+   struct payload_write_descriptor_set_intro intro;
+   struct payload_write_descriptor_set_buffer p_buffer;
+   uint32_t *buffer_handles;
+   uint32_t descriptor_handle;
+
+   res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
+   CHECK_IO_RESULT(res, sizeof(intro));
+
+   memset(&vk_info, 0, sizeof(vk_info));
+   vk_info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+   vk_info.dstBinding = intro.dstBinding;
+   vk_info.dstArrayElement = intro.dstArrayElement;
+   vk_info.descriptorType = intro.descriptorType;
+   vk_info.descriptorCount = intro.descriptorCount;
+
+   descriptor_handle = intro.dstSet;
+
+   pBufferInfo = alloca(sizeof(*pBufferInfo) * vk_info.descriptorCount);
+   buffer_handles = alloca(sizeof(uint32_t) * vk_info.descriptorCount);
+
+   for (uint32_t i = 0; i < intro.descriptorCount; i++) {
+      res = vtest_block_read(renderer.in_fd, &p_buffer, sizeof(p_buffer));
+      CHECK_IO_RESULT(res, sizeof(p_buffer));
+
+      buffer_handles[i] = p_buffer.buffer_handle;
+      pBufferInfo[i].offset = p_buffer.offset;
+      pBufferInfo[i].range = p_buffer.range;
+   }
+
+   result.error_code = virgl_vk_write_descriptor_set(intro.device_handle,
+                                                     &vk_info,
+                                                     pBufferInfo,
+                                                     descriptor_handle,
+                                                     buffer_handles);
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   RETURN(0);
+}

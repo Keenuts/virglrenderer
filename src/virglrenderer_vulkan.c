@@ -548,14 +548,12 @@ int virgl_vk_bind_buffer_memory(uint32_t device_handle,
 
    device = get_device_from_handle(device_handle);
    if (NULL == device) {
-      DEBUG_ERR("Device not found.");
       RETURN(-1);
    }
 
    vk_buffer = device_get_object(device, buffer_handle);
    vk_memory = device_get_object(device, memory_handle);
    if (NULL == vk_buffer || NULL == vk_memory) {
-      DEBUG_ERR("Unknown handles.");
       RETURN(-2);
    }
 
@@ -565,5 +563,41 @@ int virgl_vk_bind_buffer_memory(uint32_t device_handle,
       RETURN(-3);
    }
 
+   RETURN(0);
+}
+
+int virgl_vk_write_descriptor_set(uint32_t device_handle,
+                                  VkWriteDescriptorSet *write_info,
+                                  VkDescriptorBufferInfo *buffer_info,
+                                  uint32_t descriptor_handle,
+                                  uint32_t *buffer_handles)
+{
+   struct vk_device *device = NULL;
+   VkDescriptorSet *vk_set = NULL;
+   VkBuffer *vk_buffer = NULL;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   vk_set = device_get_object(device, descriptor_handle);
+   if (NULL == vk_set) {
+      RETURN(-2);
+   }
+
+   for (uint32_t i = 0; i < write_info->descriptorCount; i++) {
+      vk_buffer = device_get_object(device, buffer_handles[i]);
+      if (NULL == vk_buffer) {
+         RETURN(-2);
+      }
+
+      buffer_info[i].buffer = *vk_buffer;
+   }
+
+   write_info->dstSet = *vk_set;
+   write_info->pBufferInfo = buffer_info;
+
+   vkUpdateDescriptorSets(device->vk_device, 1, write_info, 0, NULL);
    RETURN(0);
 }

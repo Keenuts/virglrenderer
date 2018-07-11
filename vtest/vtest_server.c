@@ -117,6 +117,7 @@ static const int (*vtest_commands[])(uint32_t length_dw) = {
     vtest_vk_get_device_memory_properties,
     vtest_vk_allocate_memory,
     vtest_vk_bind_buffer_memory,
+    vtest_vk_write_descriptor_set,
 #endif
 };
 
