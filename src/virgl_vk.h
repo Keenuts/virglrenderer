@@ -16,7 +16,8 @@ struct virgl_vk {
 typedef struct vk_device {
    struct list list;
 
-   VkDevice vk_device;
+   uint32_t physical_device_id;
+   VkDevice handle;
 
    uint32_t queue_count;
    VkQueue *queues;
@@ -49,6 +50,7 @@ DECLARE_VK_HANDLE(VkBuffer, buffer);
 
 typedef struct {
    VkDeviceMemory handle;
+   VkMemoryPropertyFlags flags;
 
    void *map_ptr;
    uint64_t map_size;

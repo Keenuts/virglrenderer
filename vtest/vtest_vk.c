@@ -194,9 +194,10 @@ int vtest_vk_create_device(uint32_t length_dw)
 int vtest_vk_read_memory(uint32_t length_dw)
 {
    TRACE_IN();
+   UNUSED_PARAMETER(length_dw);
 
    int res = 0;
-   int cached;
+   uint8_t cached;
    struct vtest_result result;
    struct vtest_payload_rw_memory info;
    void *data = NULL;
@@ -226,21 +227,21 @@ int vtest_vk_read_memory(uint32_t length_dw)
          }
       }
 
-      res = vtest_block_read(renderer.out_fd, data, info.size);
+      result.error_code = 0;
+      result.result = 0;
+      res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+      CHECK_IO_RESULT(res, sizeof(result));
+
+      res = vtest_block_write(renderer.out_fd, data, info.size);
       if (0 > res) {
-         break;
+         DEBUG_ERR("data write failed: %d\n", res);
       }
 
       res = virgl_vk_unmap_memory(info.device_handle, info.memory_handle);
       if (0 > res) {
-         break;
+         DEBUG_ERR("unmap failed: %d\n", res);
       }
    } while (0);
-
-   result.error_code = res;
-   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
-   CHECK_IO_RESULT(res, sizeof(result));
-   UNUSED_PARAMETER(length_dw);
 
    RETURN(0);
 }
