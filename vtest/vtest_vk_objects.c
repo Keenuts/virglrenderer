@@ -350,6 +350,7 @@ vtest_vk_bind_buffer_memory(uint32_t length_dw)
    res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
    CHECK_IO_RESULT(res, sizeof(intro));
 
+   result.result = 0;
    result.error_code = virgl_vk_bind_buffer_memory(intro.device_handle,
                                                    intro.buffer_handle,
                                                    intro.memory_handle,
@@ -403,6 +404,7 @@ vtest_vk_write_descriptor_set(uint32_t length_dw)
                                                      pBufferInfo,
                                                      descriptor_handle,
                                                      buffer_handles);
+   result.result = 0;
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
