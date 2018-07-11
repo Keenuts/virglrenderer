@@ -81,6 +81,9 @@ virgl_vk_is_memory_cached(uint32_t device_handle,
 VIRGL_EXPORT int
 virgl_vk_invalidate_memory(uint32_t device_handle,
                            uint32_t memory_handle);
+VIRGL_EXPORT int
+virgl_vk_flush_memory(uint32_t device_handle,
+                      uint32_t memory_handle);
 
 VIRGL_EXPORT int
 virgl_vk_map_memory(uint32_t device_handle,

@@ -534,12 +534,38 @@ int virgl_vk_allocate_memory(uint32_t device_handle,
 {
    TRACE_IN();
 
-   int res = create_simple_object(device_handle,
-                                  info,
-                                  (PFN_vkCreateFunction)vkAllocateMemory,
-                                  (PFN_vkDestroyFunction)vkFreeMemory,
-                                  sizeof(vk_device_memory_t),
-                                  output);
+   int res;
+   vk_device_t *device;
+   vk_device_memory_t *memory = NULL;
+   VkPhysicalDeviceMemoryProperties props;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   res = virgl_vk_get_memory_properties(device->physical_device_id, &props);
+   if (0 > res) {
+      RETURN(res);
+   }
+
+   res = create_simple_object(device_handle,
+                              info,
+                              (PFN_vkCreateFunction)vkAllocateMemory,
+                              (PFN_vkDestroyFunction)vkFreeMemory,
+                              sizeof(vk_device_memory_t),
+                              output);
+   if (0 > res) {
+      RETURN(res);
+   }
+
+   memory = device_get_object(device, *output);
+   if (unlikely(NULL == memory)) {
+      RETURN(-1);
+   }
+
+   memory->flags = props.memoryTypes[info->memoryTypeIndex].propertyFlags;
+
    RETURN(res);
 }
 
@@ -632,18 +658,91 @@ int virgl_vk_is_memory_cached(uint32_t device_handle,
                               uint32_t memory_handle,
                               uint8_t *output)
 {
-   UNUSED_PARAMETER(device_handle);
-   UNUSED_PARAMETER(memory_handle);
-   UNUSED_PARAMETER(output);
-   return 0;
+   TRACE_IN();
+
+   vk_device_t *device = NULL;
+   vk_device_memory_t *memory = NULL;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   memory = device_get_object(device, memory_handle);
+   if (NULL == memory) {
+      RETURN(-2);
+   }
+
+   *output = (memory->flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0;
+   RETURN(0);
 }
 
 int virgl_vk_invalidate_memory(uint32_t device_handle,
                                uint32_t memory_handle)
 {
-   UNUSED_PARAMETER(device_handle);
-   UNUSED_PARAMETER(memory_handle);
-   return 0;
+   TRACE_IN();
+
+   VkMappedMemoryRange range;
+   VkResult res;
+   vk_device_t *device = NULL;
+   vk_device_memory_t *memory = NULL;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   memory = device_get_object(device, memory_handle);
+   if (NULL == memory || memory->map_ptr == NULL) {
+      RETURN(-2);
+   }
+
+   range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+   range.pNext = NULL;
+   range.memory = memory->handle;
+   range.offset = memory->map_offset;
+   range.size = memory->map_size;
+
+   res = vkInvalidateMappedMemoryRanges(device->handle, 1, &range);
+   if (VK_SUCCESS != res) {
+      RETURN(-3);
+   }
+
+   RETURN(0);
+}
+
+int virgl_vk_flush_memory(uint32_t device_handle,
+                          uint32_t memory_handle)
+{
+   TRACE_IN();
+
+   VkMappedMemoryRange range;
+   VkResult res;
+   vk_device_t *device = NULL;
+   vk_device_memory_t *memory = NULL;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   memory = device_get_object(device, memory_handle);
+   if (NULL == memory || memory->map_ptr == NULL) {
+      RETURN(-2);
+   }
+
+   range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+   range.pNext = NULL;
+   range.memory = memory->handle;
+   range.offset = memory->map_offset;
+   range.size = memory->map_size;
+
+   res = vkFlushMappedMemoryRanges(device->handle, 1, &range);
+   if (VK_SUCCESS != res) {
+      RETURN(-3);
+   }
+
+   RETURN(0);
 }
 
 int virgl_vk_map_memory(uint32_t device_handle,
@@ -652,18 +751,52 @@ int virgl_vk_map_memory(uint32_t device_handle,
                         uint32_t size,
                         void **ptr)
 {
-   UNUSED_PARAMETER(device_handle);
-   UNUSED_PARAMETER(memory_handle);
-   UNUSED_PARAMETER(offset);
-   UNUSED_PARAMETER(size);
-   UNUSED_PARAMETER(ptr);
-   return 0;
+   TRACE_IN();
+
+   VkResult res;
+   vk_device_t *device = NULL;
+   vk_device_memory_t *memory = NULL;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   memory = device_get_object(device, memory_handle);
+   if (NULL == memory) {
+      RETURN(-2);
+   }
+
+   res = vkMapMemory(device->handle, memory->handle, offset, size, 0, ptr);
+   if (VK_SUCCESS != res) {
+      RETURN(-3);
+   }
+
+   memory->map_size = size;
+   memory->map_offset = offset;
+   memory->map_ptr = ptr;
+
+   RETURN(0);
 }
 
 int virgl_vk_unmap_memory(uint32_t device_handle,
                           uint32_t memory_handle)
 {
-   UNUSED_PARAMETER(device_handle);
-   UNUSED_PARAMETER(memory_handle);
-   return 0;
+   vk_device_t *device = NULL;
+   vk_device_memory_t *memory = NULL;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   memory = device_get_object(device, memory_handle);
+   if (NULL == memory) {
+      RETURN(-2);
+   }
+
+   vkUnmapMemory(device->handle, memory->handle);
+
+   memory->map_ptr = NULL;
+   RETURN(0);
 }
