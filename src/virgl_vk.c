@@ -6,7 +6,7 @@
 #include "util/macros.h"
 #include "virgl_vk.h"
 
-static const char* vkresult_to_string(VkResult res)
+const char* vkresult_to_string(VkResult res)
 {
    switch (res)
    {
@@ -59,25 +59,6 @@ static void check_vkresult(const char* fname, VkResult res)
 }
 
 #define CALL_VK(Func, Param) check_vkresult(#Func, Func Param)
-
-static void dump_available_layers(void)
-{
-   uint32_t layer_count;
-   CALL_VK(vkEnumerateInstanceLayerProperties, (&layer_count, NULL));
-
-   if (layer_count == 0) {
-      fprintf(stderr, "no layers available.\n");
-      return;
-   }
-
-   VkLayerProperties *layers = alloca(sizeof(*layers) * layer_count);
-   CALL_VK(vkEnumerateInstanceLayerProperties, (&layer_count, layers));
-
-   fprintf(stderr, "layers:\n");
-   for (uint32_t i = 0; i < layer_count; i++) {
-      fprintf(stderr, "\t%s: %s\n", layers[i].layerName, layers[i].description);
-   }
-}
 
 static int init_physical_devices(struct virgl_vk *state)
 {
@@ -167,9 +148,6 @@ struct virgl_vk* virgl_vk_init()
 
 void virgl_vk_destroy(struct virgl_vk **state)
 {
-   struct list_physical_device *device_list = NULL;
-   struct list_physical_device *device_list_last = NULL;
-
    if ((*state)->vk_instance != VK_NULL_HANDLE) {
       vkDestroyInstance((*state)->vk_instance, NULL);
       (*state)->vk_instance = VK_NULL_HANDLE;

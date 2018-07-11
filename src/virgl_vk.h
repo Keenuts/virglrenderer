@@ -37,6 +37,8 @@ struct vk_object {
 
 extern struct virgl_vk *vk_info;
 
+const char* vkresult_to_string(VkResult res);
+
 struct virgl_vk* virgl_vk_init();
 void virgl_vk_destroy(struct virgl_vk **state);
 

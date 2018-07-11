@@ -341,6 +341,7 @@ static int create_simple_object(uint32_t device_id,
 
    device = get_device_from_handle(device_id);
    if (NULL == device) {
+      DEBUG_ERR("invalid device for handle %u\n", device_id);
       RETURN(-1);
    }
 
@@ -351,6 +352,7 @@ static int create_simple_object(uint32_t device_id,
 
    res = create_func(device->vk_device, create_info, NULL, vk_handle);
    if (VK_SUCCESS != res) {
+      DEBUG_ERR("vk call failed %s\n", vkresult_to_string(res));
       free(vk_handle);
       RETURN(-3);
    }
