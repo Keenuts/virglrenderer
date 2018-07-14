@@ -34,10 +34,9 @@ static void vkobj_free(void *handle)
 {
    struct vk_object *obj = handle;
 
-   obj->cleanup_callback(obj->vk_device, obj->vk_handle, NULL);
+   obj->cleanup_callback(obj->vk_device, obj->vk_handle->content, NULL);
    free(obj);
 }
-
 
 /* helper functions */
 
