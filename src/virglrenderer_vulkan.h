@@ -119,4 +119,34 @@ struct virgl_vk_record_info {
 VIRGL_EXPORT int
 virgl_vk_record_command(uint32_t device_handle,
                         const struct virgl_vk_record_info *info);
+VIRGL_EXPORT int
+virgl_vk_create_fence(uint32_t device_handle,
+                      VkFenceCreateInfo *info,
+                      uint32_t *handle);
+VIRGL_EXPORT int
+virgl_vk_wait_for_fences(uint32_t device_handle,
+                         uint32_t fence_count,
+                         uint32_t *handles,
+                         uint32_t wait_all,
+                         uint64_t timeout);
+
+struct virgl_vk_submit_info {
+   uint32_t device_handle;
+   uint32_t queue_handle;
+   uint32_t fence_handle;
+   uint32_t wait_count;
+   uint32_t cmd_count;
+   uint32_t signal_count;
+
+   uint32_t *wait_handles;
+   uint32_t *wait_stage_masks;
+
+   uint32_t *cmd_handles;
+   uint32_t *pool_handles;
+
+   uint32_t *signal_handles;
+};
+
+VIRGL_EXPORT int
+virgl_vk_queue_submit(const struct virgl_vk_submit_info *info);
 #endif

@@ -952,6 +952,7 @@ int virgl_vk_record_command(uint32_t device_handle,
    }
 
    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+   //FIXME: get type from guest
    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
    res = vkBeginCommandBuffer(cmd, &begin_info);
    if (VK_SUCCESS != res) {
@@ -977,4 +978,129 @@ int virgl_vk_record_command(uint32_t device_handle,
    }
 
    RETURN(0);
+}
+
+int virgl_vk_create_fence(uint32_t device_handle,
+                          VkFenceCreateInfo *info,
+                          uint32_t *handle)
+{
+	TRACE_IN();
+
+   int res = create_simple_object(device_handle,
+                                  info,
+                                  (PFN_vkCreateFunction)vkCreateFence,
+                                  (PFN_vkDestroyFunction)vkDestroyFence,
+                                  sizeof(vk_fence_t),
+                                  handle);
+   RETURN(res);
+}
+
+int virgl_vk_wait_for_fences(uint32_t device_handle,
+                             uint32_t fence_count,
+                             uint32_t *handles,
+                             uint32_t wait_all,
+                             uint64_t timeout)
+{
+   vk_device_t *device = NULL;
+   vk_fence_t *fence = NULL;
+   VkFence *fences = NULL;
+   VkResult res;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   fences = alloca(sizeof(*fences) * fence_count);
+   for (uint32_t i = 0; i < fence_count; i++) {
+      fence = device_get_object(device, handles[i]);
+      if (NULL == fence) {
+         RETURN(-2);
+      }
+
+      fences[i] = fence->handle;
+   }
+
+   res = vkWaitForFences(device->handle, fence_count, fences, wait_all, timeout);
+   RETURN(res);
+}
+
+int virgl_vk_queue_submit(const struct virgl_vk_submit_info *info)
+{
+   vk_device_t *vk_device = NULL;
+   vk_fence_t *vk_fence = NULL;
+   vk_command_pool_t *vk_pool = NULL;
+   vk_semaphore_t *vk_semaphore = NULL;
+   VkFence fence = VK_NULL_HANDLE;
+   VkSubmitInfo vk_info = { 0 };
+   VkQueue queue;
+
+   VkSemaphore *wait_s = NULL;
+   VkSemaphore *signal_s = NULL;
+   VkCommandBuffer *cmds = NULL;
+   VkPipelineStageFlags *flags = NULL;
+
+   vk_device = get_device_from_handle(info->device_handle);
+   if (NULL == vk_device) {
+      RETURN(-1);
+   }
+
+   if (info->queue_handle >= vk_device->queue_count) {
+      RETURN(-2);
+   }
+   queue = vk_device->queues[info->queue_handle];
+
+   if (info->fence_handle != 0) {
+      vk_fence = device_get_object(vk_device, info->fence_handle);
+      if (NULL == vk_fence) {
+         RETURN(-2);
+      }
+      fence = vk_fence->handle;
+   }
+
+   vk_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+   vk_info.waitSemaphoreCount = info->wait_count;
+   wait_s = alloca(sizeof(VkSemaphore) * info->wait_count);
+   flags = alloca(sizeof(VkPipelineStageFlags) * info->wait_count);
+
+   for (uint32_t i = 0; i < info->wait_count; i++) {
+      vk_semaphore = device_get_object(vk_device, info->wait_handles[i]);
+      if (NULL == vk_semaphore) {
+         RETURN(-2);
+      }
+      wait_s[i] = vk_semaphore->handle;
+      flags[i] = info->wait_stage_masks[i];
+   }
+
+   vk_info.commandBufferCount = info->cmd_count;
+   cmds = alloca(sizeof(VkCommandBuffer) * info->cmd_count);
+   for (uint32_t i = 0; i < info->cmd_count; i++) {
+      vk_pool = device_get_object(vk_device, info->pool_handles[i]);
+      if (NULL == vk_pool) {
+         RETURN(-2);
+      }
+
+      /* remember: handle 0 is invalid. Thus we need to substract one */
+      if (0 == info->cmd_handles[i] || info->cmd_handles[i] - 1 >= vk_pool->usage) {
+         RETURN(-2);
+      }
+      cmds[i] = vk_pool->cmds[info->cmd_handles[i] - 1];
+   }
+
+   vk_info.signalSemaphoreCount = info->signal_count;
+   signal_s = alloca(sizeof(VkSemaphore) * info->signal_count);
+   for (uint32_t i = 0; i < info->signal_count; i++) {
+      vk_semaphore = device_get_object(vk_device, info->signal_handles[i]);
+      if (NULL == vk_semaphore) {
+         RETURN(-2);
+      }
+      signal_s[i] = vk_semaphore->handle;
+   }
+
+   vk_info.pWaitSemaphores = wait_s;
+   vk_info.pWaitDstStageMask = flags;
+   vk_info.pCommandBuffers = cmds;
+   vk_info.pSignalSemaphores = signal_s;
+
+   return vkQueueSubmit(queue, 1, &vk_info, fence);
 }

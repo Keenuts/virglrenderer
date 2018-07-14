@@ -412,3 +412,103 @@ vtest_vk_write_descriptor_set(uint32_t length_dw)
    UNUSED_PARAMETER(length_dw);
    RETURN(0);
 }
+
+int
+vtest_vk_create_fence(uint32_t length_dw)
+{
+   int res;
+   struct vtest_result result = { 0 };
+   VkFenceCreateInfo vk_info = { 0 };
+   struct payload_create_fence payload;
+
+   res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
+   CHECK_IO_RESULT(res, sizeof(payload));
+
+   vk_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+   vk_info.flags = payload.flags;
+
+   result.error_code = virgl_vk_create_fence(payload.device_handle,
+                                             &vk_info,
+                                             &result.result);
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   UNUSED_PARAMETER(length_dw);
+   RETURN(0);
+}
+
+int
+vtest_vk_wait_for_fences(uint32_t length_dw)
+{
+   int res;
+   struct vtest_result result = { 0 };
+   struct payload_wait_for_fences payload;
+   uint32_t *fences = NULL;
+
+   res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
+   CHECK_IO_RESULT(res, sizeof(payload));
+
+   fences = alloca(sizeof(uint32_t) * payload.fence_count);
+   res = vtest_block_read(renderer.in_fd, fences, sizeof(uint32_t) * payload.fence_count);
+   CHECK_IO_RESULT(res, sizeof(uint32_t) * payload.fence_count);
+
+   result.error_code = virgl_vk_wait_for_fences(payload.device_handle,
+                                                payload.fence_count,
+                                                fences,
+                                                payload.wait_all,
+                                                payload.timeout);
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   UNUSED_PARAMETER(length_dw);
+   RETURN(0);
+}
+
+int
+vtest_vk_queue_submit(uint32_t length_dw)
+{
+   int res;
+   struct vtest_result result = { 0 };
+   struct payload_queue_submit payload;
+   struct virgl_vk_submit_info info;
+
+   res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
+   CHECK_IO_RESULT(res, sizeof(payload));
+
+   memcpy(&info, &payload, sizeof(payload));
+   info.wait_handles = alloca(sizeof(uint32_t) * info.wait_count);
+   info.wait_stage_masks = alloca(sizeof(uint32_t) * info.wait_count);
+   info.cmd_handles = alloca(sizeof(uint32_t) * info.cmd_count);
+   info.pool_handles = alloca(sizeof(uint32_t) * info.cmd_count);
+   info.signal_handles = alloca(sizeof(uint32_t) * info.signal_count);
+
+   res = vtest_block_read(renderer.in_fd,
+                          info.wait_handles,
+                          sizeof(uint32_t) * payload.wait_count);
+   CHECK_IO_RESULT(res, sizeof(uint32_t) * payload.wait_count);
+   res = vtest_block_read(renderer.in_fd,
+                          info.wait_stage_masks,
+                          sizeof(uint32_t) * payload.wait_count);
+   CHECK_IO_RESULT(res, sizeof(uint32_t) * payload.wait_count);
+
+   res = vtest_block_read(renderer.in_fd,
+                          info.pool_handles,
+                          sizeof(uint32_t) * payload.cmd_count);
+   CHECK_IO_RESULT(res, sizeof(uint32_t) * payload.cmd_count);
+   res = vtest_block_read(renderer.in_fd,
+                          info.cmd_handles,
+                          sizeof(uint32_t) * payload.cmd_count);
+   CHECK_IO_RESULT(res, sizeof(uint32_t) * payload.cmd_count);
+
+   res = vtest_block_read(renderer.in_fd,
+                          info.signal_handles,
+                          sizeof(uint32_t) * payload.signal_count);
+   CHECK_IO_RESULT(res, sizeof(uint32_t) * payload.signal_count);
+
+   result.error_code = virgl_vk_queue_submit(&info);
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   UNUSED_PARAMETER(length_dw);
+   RETURN(0);
+}

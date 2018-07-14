@@ -47,6 +47,8 @@ DECLARE_VK_HANDLE(VkPipelineLayout, pipeline_layout);
 DECLARE_VK_HANDLE(VkShaderModule, shader_module);
 DECLARE_VK_HANDLE(VkPipeline, pipeline);
 DECLARE_VK_HANDLE(VkBuffer, buffer);
+DECLARE_VK_HANDLE(VkFence, fence);
+DECLARE_VK_HANDLE(VkSemaphore, semaphore);
 
 typedef struct {
    VkDeviceMemory handle;

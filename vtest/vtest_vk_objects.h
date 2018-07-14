@@ -98,6 +98,31 @@ struct payload_write_descriptor_set_buffer {
    uint64_t range;
 };
 
+struct payload_create_fence {
+   uint32_t device_handle;
+   uint32_t flags;
+};
+
+struct payload_wait_for_fences {
+   uint32_t device_handle;
+   uint32_t fence_count;
+   uint32_t wait_all;
+   uint32_t timeout;
+   /* uint32_t fence_handles[] */;
+};
+
+struct payload_queue_submit {
+   uint32_t device_handle;
+   uint32_t queue_handle;
+   uint32_t fence_handle;
+   uint32_t wait_count;
+   uint32_t cmd_count;
+   uint32_t signal_count;
+   /* uint32_t wait_handles[]; */
+   /* uint32_t cmd_handles[]; */
+   /* uint32_t signal_handles[]; */
+};
+
 int
 vtest_vk_create_descriptor_set_layout(uint32_t length_dw);
 int
@@ -118,5 +143,11 @@ int
 vtest_vk_bind_buffer_memory(uint32_t length_dw);
 int
 vtest_vk_write_descriptor_set(uint32_t length_dw);
+int
+vtest_vk_create_fence(uint32_t length_dw);
+int
+vtest_vk_wait_for_fences(uint32_t length_dw);
+int
+vtest_vk_queue_submit(uint32_t length_dw);
 
 #endif
