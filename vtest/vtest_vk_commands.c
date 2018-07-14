@@ -57,11 +57,12 @@ int vtest_vk_allocate_command_buffers(uint32_t length_dw)
    vk_info.commandBufferCount = payload.count;
 
    handles = alloca(sizeof(uint32_t) * payload.count);
-   result.result = payload.count;
    result.error_code = virgl_vk_allocate_command_buffers(payload.device_handle,
                                                          payload.pool_handle,
                                                          &vk_info,
                                                          handles);
+
+   result.result = payload.count;
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
    if (0 != result.error_code) {
@@ -87,11 +88,17 @@ int vtest_vk_record_command(uint32_t length_dw)
    res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
    CHECK_IO_RESULT(res, sizeof(payload));
 
-   info = alloca(sizeof(*info) + sizeof(uint32_t) * payload.descriptor_count);
-   info->descriptor_handles = (void*)(info + 1);
+   info = alloca(sizeof(*info));
+   info->cmd_handle = payload.cmd_handle;
+   info->pool_handle = payload.pool_handle;
+   info->pipeline_handle = payload.pipeline_handle;
+   info->pipeline_layout_handle = payload.pipeline_layout_handle;
+   info->bind_point = payload.bind_point;
+   info->descriptor_count = payload.descriptor_count;
+   memcpy(&info->dispatch_size, &payload.dispatch_size, sizeof(uint32_t) * 3);
 
-   /* +1 to skip the device handle */
-   memcpy((uint32_t*)info + 1, &payload, sizeof(payload) - sizeof(uint32_t));
+   info->descriptor_handles = alloca(sizeof(uint32_t) * payload.descriptor_count);
+
 
    res = vtest_block_read(renderer.in_fd,
                           info->descriptor_handles,

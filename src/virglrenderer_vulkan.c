@@ -909,8 +909,72 @@ int virgl_vk_record_command(uint32_t device_handle,
 {
    TRACE_IN();
 
-   UNUSED_PARAMETER(device_handle);
-   UNUSED_PARAMETER(info);
+   vk_device_t *device = NULL;
+   vk_command_pool_t *pool = NULL;
+   vk_pipeline_t *pipeline = NULL;
+   vk_pipeline_layout_t *pipeline_layout = NULL;
+   vk_descriptor_set_t *set = NULL;
 
-   RETURN(-1);
+   VkCommandBuffer cmd = VK_NULL_HANDLE;
+   VkDescriptorSet *descriptors = NULL;
+   VkResult res;
+   VkCommandBufferBeginInfo begin_info = { 0 };
+
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   pool = device_get_object(device, info->pool_handle);
+   pipeline = device_get_object(device, info->pipeline_handle);
+   pipeline_layout = device_get_object(device, info->pipeline_layout_handle);
+   if (NULL == pipeline || NULL == pipeline_layout || NULL == pool) {
+      RETURN(-2);
+   }
+
+   descriptors = alloca(sizeof(*descriptors) * info->descriptor_count);
+   for (uint32_t i = 0; i < info->descriptor_count; i++) {
+      set = device_get_object(device, info->descriptor_handles[i]);
+      if (NULL == set) {
+         RETURN(-2);
+      }
+      descriptors[i] = set->handle;
+   }
+
+   if (pool->usage < info->cmd_handle) {
+      RETURN(-2);
+   }
+   /* 0 is an invalid handles. entry = handle - 1 */
+   cmd = pool->cmds[info->cmd_handle - 1];
+   if (VK_NULL_HANDLE == cmd) {
+      RETURN(-2);
+   }
+
+   begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+   begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+   res = vkBeginCommandBuffer(cmd, &begin_info);
+   if (VK_SUCCESS != res) {
+      RETURN(-4);
+   }
+
+   vkCmdBindPipeline(cmd, info->bind_point, pipeline->handle);
+   vkCmdBindDescriptorSets(cmd,
+                           info->bind_point,
+                           pipeline_layout->handle,
+                           0,
+                           info->descriptor_count,
+                           descriptors,
+                           0,
+                           NULL);
+   vkCmdDispatch(cmd,
+                 info->dispatch_size[0],
+                 info->dispatch_size[1],
+                 info->dispatch_size[2]);
+   res = vkEndCommandBuffer(cmd);
+   if (VK_SUCCESS != res) {
+      RETURN(-4);
+   }
+
+   RETURN(0);
 }

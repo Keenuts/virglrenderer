@@ -107,8 +107,10 @@ virgl_vk_allocate_command_buffers(uint32_t device_handle,
 
 struct virgl_vk_record_info {
    uint32_t cmd_handle;
+   uint32_t pool_handle;
    uint32_t pipeline_handle;
    uint32_t pipeline_layout_handle;
+   uint32_t bind_point;
    uint32_t descriptor_count;
    uint32_t dispatch_size[3];
    uint32_t *descriptor_handles;

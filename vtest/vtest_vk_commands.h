@@ -17,10 +17,12 @@ struct payload_command_buffer_allocate_info {
 struct payload_command_record_info {
    uint32_t device_handle;
    uint32_t cmd_handle;
+   uint32_t pool_handle;
    uint32_t pipeline_handle;
    uint32_t pipeline_layout_handle;
-   uint32_t dispatch_size[3];
+   uint32_t bind_point;
    uint32_t descriptor_count;
+   uint32_t dispatch_size[3];
 };
 
 int vtest_vk_create_command_pool(uint32_t length_dw);
