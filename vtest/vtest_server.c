@@ -93,7 +93,10 @@ static int wait_for_socket_accept(int sock)
 #define PRINT_ERROR(Msg, ...) \
    fprintf(stderr, "%s: " Msg "\n", __func__, ##__VA_ARGS__)
 
-static const int (*vtest_commands[])(uint32_t length_dw) = {
+typedef int (*vtest_cmd_fptr)(uint32_t);
+
+static const vtest_cmd_fptr vtest_commands[] = {
+//int (*static const vtest_commands[])(uint32_t length_dw) = {
     NULL /* CMD ids starts at 1 */,
     NULL /* vtest_send_caps */,
     NULL /* vtest_create_resource */,
@@ -104,29 +107,32 @@ static const int (*vtest_commands[])(uint32_t length_dw) = {
     NULL /* vtest_resource_busy_wait */,
     NULL /* vtest_create_renderer */,
 #ifdef WITH_VULKAN
-    vtest_vk_enumerate_devices,
-    vtest_vk_get_sparse_properties,
-    vtest_vk_get_queue_family_properties,
-    vtest_vk_create_device,
-    vtest_vk_create_descriptor_set_layout,
-    vtest_vk_create_buffer,
+    vtest_vk_allocate_command_buffers,
     vtest_vk_allocate_descriptor_sets,
-    vtest_vk_create_shader_module,
-    vtest_vk_create_descriptor_pool,
-    vtest_vk_create_pipeline_layout,
-    vtest_vk_create_compute_pipelines,
-    vtest_vk_get_device_memory_properties,
     vtest_vk_allocate_memory,
     vtest_vk_bind_buffer_memory,
-    vtest_vk_write_descriptor_set,
+    vtest_vk_create_buffer,
+    vtest_vk_create_command_pool,
+    vtest_vk_create_compute_pipelines,
+    vtest_vk_create_descriptor_pool,
+    vtest_vk_create_descriptor_set_layout,
+    vtest_vk_create_device,
+    vtest_vk_create_pipeline_layout,
+    vtest_vk_create_shader_module,
+    vtest_vk_enumerate_devices,
+    vtest_vk_get_device_memory_properties,
+    vtest_vk_get_sparse_properties,
+    vtest_vk_get_queue_family_properties,
     vtest_vk_read_memory,
+    vtest_vk_record_command,
+    vtest_vk_write_descriptor_set,
     vtest_vk_write_memory,
 #endif
 };
 
 static int run_renderer(int in_fd, int out_fd)
 {
-   int ret;
+   int err, ret;
    uint32_t header[VTEST_HDR_SIZE];
    int initialized = 0;
 
@@ -135,13 +141,13 @@ static int run_renderer(int in_fd, int out_fd)
    do {
       ret = vtest_wait_for_fd_read(in_fd);
       if (ret < 0) {
-         fprintf(stderr, "%s: invalid read (%d).\n", __func__, ret);
+         err = 1;
          break;
       }
 
       ret = vtest_block_read(in_fd, &header, sizeof(header));
-      if (ret < sizeof(header)) {
-         fprintf(stderr, "%s: invalid command header %d.\n", __func__, ret);
+      if (ret < 0 || (size_t)ret < sizeof(header)) {
+         err = 2;
          break;
       }
 
@@ -150,8 +156,7 @@ static int run_renderer(int in_fd, int out_fd)
       if (!initialized) {
          /* The first command MUST be VCMD_CREATE_RENDERER */
          if (header[1] != VCMD_CREATE_RENDERER) {
-            fprintf(stderr, "%s: first command MUST be VCMD_CREATE_RENDERER got %u\n",
-                    __func__, header[1]);
+            err = 3;
             break;
          }
 
@@ -164,23 +169,23 @@ static int run_renderer(int in_fd, int out_fd)
 
       vtest_poll();
       if (header[1] <= 0 || header[1] >= ARRAY_SIZE(vtest_commands)) {
-         fprintf(stderr, "%s: invalid command index %u.\n", __func__, header[1]);
+         err = 4;
          break;
       }
 
       if (vtest_commands[header[1]] == NULL) {
-         fprintf(stderr, "%s: command index %u is not active.\n", __func__, header[1]);
+         err = 5;
          break;
       }
 
       ret = vtest_commands[header[1]](header[0]);
       if (ret != 0) {
-         fprintf(stderr, "%s: command %u failed (%u).\n", __func__, header[1], ret);
+         err = 6;
          break;
       }
    } while (1);
 
-   fprintf(stderr, "socket failed - closing renderer\n");
+   fprintf(stderr, "socket failed (%d) - closing renderer\n", err);
 
    vtest_destroy_renderer();
    close(in_fd);
