@@ -856,6 +856,8 @@ virgl_vk_command_pool_allocate_buffers(vk_device_t *device,
          fprintf(stderr, "cmd pool reallocation failed. good luck.\n");
          return -1;
       }
+
+      memset(pool->cmds + pool->usage, 0, sizeof(*pool->cmds) * count);
    }
 
    res = vkAllocateCommandBuffers(device->handle, info, pool->cmds + pool->usage);
@@ -863,12 +865,12 @@ virgl_vk_command_pool_allocate_buffers(vk_device_t *device,
       return -2;
    }
 
-   pool->usage += count;
-
    for (uint32_t i = 0; i < count; i++) {
       /* 0 is an invalid handle */
       handles[i] = pool->usage + i + 1;
    }
+   pool->usage += count;
+
    return 0;
 }
 
