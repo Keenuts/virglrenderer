@@ -1,9 +1,3 @@
-/*
- * NOTICE:
- * The code and types used here have been partialy generated.
- * Only special cases are then fixed by hand.
- * This will explain weirdly long type-names and some other things.
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,7 +16,7 @@ int
 vtest_vk_create_descriptor_pool(uint32_t length_dw)
 {
    int res;
-   struct vtest_result result;
+   struct vtest_result result = { 0 };
    VkDescriptorPoolCreateInfo vk_info;
 
    struct payload_create_descriptor_pool_intro intro;
@@ -55,7 +49,7 @@ vtest_vk_create_descriptor_pool(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
-   TRACE_OUT();
+   UNUSED_PARAMETER(length_dw);
    RETURN(0);
 }
 
@@ -63,7 +57,7 @@ int
 vtest_vk_create_descriptor_set_layout(uint32_t length_dw)
 {
    int res;
-   struct vtest_result result;
+   struct vtest_result result = { 0 };
    VkDescriptorSetLayoutCreateInfo vk_info;
    VkDescriptorSetLayoutBinding *pBindings = NULL;
 
@@ -99,7 +93,7 @@ vtest_vk_create_descriptor_set_layout(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
-   TRACE_OUT();
+   UNUSED_PARAMETER(length_dw);
    RETURN(0);
 }
 
@@ -111,7 +105,7 @@ int
 vtest_vk_allocate_descriptor_sets(uint32_t length_dw)
 {
    int res;
-   struct vtest_result result;
+   struct vtest_result result = { 0 };
    uint32_t pool_handle;
    uint32_t *set_layout_handles = NULL;
    uint32_t *output_handles = NULL;
@@ -147,6 +141,7 @@ vtest_vk_allocate_descriptor_sets(uint32_t length_dw)
                            sizeof(uint32_t) * result.result);
    CHECK_IO_RESULT(res, result.result * sizeof(uint32_t));
 
+   UNUSED_PARAMETER(length_dw);
    RETURN(0);
 }
 
@@ -154,7 +149,7 @@ int
 vtest_vk_create_shader_module(uint32_t length_dw)
 {
    int res;
-   struct vtest_result result;
+   struct vtest_result result = { 0 };
    VkShaderModuleCreateInfo vk_info;
    struct payload_create_shader_module_intro intro;
    uint32_t *shader_code = NULL;
@@ -183,6 +178,7 @@ vtest_vk_create_shader_module(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
+   UNUSED_PARAMETER(length_dw);
    RETURN(0);
 }
 
@@ -190,7 +186,7 @@ int
 vtest_vk_create_pipeline_layout(uint32_t length_dw)
 {
    int res;
-   struct vtest_result result;
+   struct vtest_result result = { 0 };
    VkPipelineLayoutCreateInfo vk_info;
    uint32_t *set_handles = NULL;
    VkPushConstantRange *vk_push_ranges = NULL;
@@ -236,6 +232,7 @@ vtest_vk_create_pipeline_layout(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
+   UNUSED_PARAMETER(length_dw);
    RETURN(0);
 }
 
@@ -276,6 +273,7 @@ vtest_vk_create_compute_pipelines(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
+   UNUSED_PARAMETER(length_dw);
    RETURN(0);
 }
 
@@ -283,7 +281,7 @@ int
 vtest_vk_allocate_memory(uint32_t length_dw)
 {
    int res;
-   struct vtest_result result;
+   struct vtest_result result = { 0 };
    VkMemoryAllocateInfo vk_info;
 
    struct payload_allocate_memory intro;
@@ -300,6 +298,7 @@ vtest_vk_allocate_memory(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
+   UNUSED_PARAMETER(length_dw);
    RETURN(0);
 }
 
@@ -307,7 +306,7 @@ int
 vtest_vk_create_buffer(uint32_t length_dw)
 {
    int res;
-   struct vtest_result result;
+   struct vtest_result result = { 0 };
    VkBufferCreateInfo vk_info;
 
    struct payload_create_buffer intro;
@@ -337,6 +336,7 @@ vtest_vk_create_buffer(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
+   UNUSED_PARAMETER(length_dw);
    RETURN(0);
 }
 
@@ -344,7 +344,7 @@ int
 vtest_vk_bind_buffer_memory(uint32_t length_dw)
 {
    int res;
-   struct vtest_result result;
+   struct vtest_result result = { 0 };
    struct payload_bind_buffer_memory intro;
 
    res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
@@ -359,6 +359,7 @@ vtest_vk_bind_buffer_memory(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
+   UNUSED_PARAMETER(length_dw);
    RETURN(0);
 }
 
@@ -366,7 +367,7 @@ int
 vtest_vk_write_descriptor_set(uint32_t length_dw)
 {
    int res;
-   struct vtest_result result;
+   struct vtest_result result = { 0 };
    VkWriteDescriptorSet vk_info;
    VkDescriptorBufferInfo *pBufferInfo = NULL;
 
@@ -408,5 +409,6 @@ vtest_vk_write_descriptor_set(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
+   UNUSED_PARAMETER(length_dw);
    RETURN(0);
 }

@@ -393,7 +393,7 @@ int virgl_vk_allocate_descriptor_set(uint32_t device_handle,
 }
 
 int virgl_vk_create_descriptor_pool(uint32_t device_handle,
-                                    VkDescriptorPoolCreateInfo *info,
+                                    const VkDescriptorPoolCreateInfo *info,
                                     uint32_t *handle)
 {
 	TRACE_IN();

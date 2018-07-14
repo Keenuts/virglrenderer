@@ -11,9 +11,6 @@
 
 extern struct vtest_renderer renderer;
 
-#define LOAD_UINT64(Buffer, Offset) \
-   ((uint64_t)Buffer[Offset + 1] << 32 | (uint64_t)Buffer[Offset])
-
 int vtest_vk_enumerate_devices(uint32_t length_dw)
 {
    TRACE_IN();
@@ -24,12 +21,11 @@ int vtest_vk_enumerate_devices(uint32_t length_dw)
    int res;
 
    res = virgl_vk_get_device_count(&device_count);
-   if (res < 0) {
-      result.error_code = -res;
+   if (0 > res) {
+      RETURN(res);
    }
 
    result.result = device_count;
-
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
@@ -50,8 +46,8 @@ int vtest_vk_get_sparse_properties(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(payload));
 
    res = virgl_vk_get_sparse_properties(payload.device_id, &sparse_props);
-   if (res < 0) {
-      result.error_code = -res;
+   if (0 > res) {
+      RETURN(res);
    }
 
    result.result = payload.device_id;
@@ -80,11 +76,10 @@ int vtest_vk_get_queue_family_properties(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(payload));
 
    res = virgl_vk_get_queue_family_properties(payload.device_id,
-                                              &family_count,
-                                              &properties);
-   if (res < 0) {
-      result.error_code = -res;
-      RETURN(-1);
+                                               &family_count,
+                                               &properties);
+   if (0 > res) {
+      RETURN(res);
    }
 
    result.result = family_count;
@@ -108,24 +103,22 @@ int vtest_vk_get_device_memory_properties(uint32_t length_dw)
    VkPhysicalDeviceMemoryProperties properties;
 
    TRACE_IN();
-   UNUSED_PARAMETER(length_dw);
 
    res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
    CHECK_IO_RESULT(res, sizeof(payload));
 
    res = virgl_vk_get_memory_properties(payload.device_id, &properties);
-   if (res < 0) {
-      result.error_code = -res;
-      RETURN(-1);
+   if (0 > res) {
+      RETURN(res);
    }
 
-   result.result = 0;
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
    res = vtest_block_write(renderer.out_fd, &properties, sizeof(properties));
    CHECK_IO_RESULT(res, sizeof(properties));
 
+   UNUSED_PARAMETER(length_dw);
    RETURN(0);
 }
 
@@ -137,16 +130,15 @@ int vtest_vk_create_device(uint32_t length_dw)
    struct VkPhysicalDeviceFeatures     features;
    struct vtest_payload_device_create  create_info;
    struct vtest_payload_queue_create   queue_info;
-   struct vtest_result result;
+   struct vtest_result result = { 0 };
    int res;
-   uint32_t device_id;
 
    UNUSED_PARAMETER(length_dw);
    TRACE_IN();
 
    /* The first payload is a lighter version of the VkDeviceCreationInfo */
    res = vtest_block_read(renderer.in_fd, &create_info, sizeof(create_info));
-   CHECK_IO_RESULT(res, sizeof(create_info));
+   CHECK_IO_RESULT(res, (int)sizeof(create_info));
 
    memset(&vk_device_info, 0, sizeof(vk_device_info));
    vk_device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -176,14 +168,17 @@ int vtest_vk_create_device(uint32_t length_dw)
       vk_queue_info->queueCount = queue_info.queue_count;
       vk_queue_info->pQueuePriorities = alloca(sizeof(float) * queue_info.queue_count);
 
-      vtest_block_read(renderer.in_fd, (float*)vk_queue_info->pQueuePriorities,
+      res = vtest_block_read(renderer.in_fd, (float*)vk_queue_info->pQueuePriorities,
                        sizeof(float) * queue_info.queue_count);
       CHECK_IO_RESULT(res, sizeof(float) * queue_info.queue_count);
    }
 
-   result.error_code = virgl_vk_create_device(create_info.physical_device_id,
-                                              &vk_device_info,
-                                              &result.result);
+   res = virgl_vk_create_device(create_info.physical_device_id,
+                                 &vk_device_info,
+                                 &result.result);
+   if (0 > res) {
+      RETURN(res);
+   }
 
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));

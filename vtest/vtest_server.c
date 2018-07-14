@@ -83,7 +83,7 @@ static int wait_for_socket_accept(int sock)
     if (ret < 0)
         return ret;
 
-    if (FD_ISSET(sock, &read_fds)) {	
+    if (FD_ISSET(sock, &read_fds)) {
         new_fd = accept(sock, NULL, NULL);
         return new_fd;
     }
