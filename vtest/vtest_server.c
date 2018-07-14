@@ -37,6 +37,7 @@
 #include "vtest.h"
 #include "vtest_protocol.h"
 #include "vtest_vk.h"
+#include "vtest_vk_commands.h"
 #include "vtest_vk_objects.h"
 
 static int vtest_open_socket(const char *path)

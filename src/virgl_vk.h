@@ -57,6 +57,15 @@ typedef struct {
    uint64_t map_offset;
 } vk_device_memory_t;
 
+typedef struct {
+   VkCommandPool handle;
+
+   //FIXME: this array does not have to be contiguous
+   VkCommandBuffer *cmds;
+   uint32_t usage;
+   uint32_t capacity;
+} vk_command_pool_t;
+
 /* An object stores in the hashtable */
 struct vk_object {
    uint32_t handle;

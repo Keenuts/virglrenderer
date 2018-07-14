@@ -24,8 +24,10 @@ virgl_test_server_SOURCES =			\
 
 if WITH_VULKAN
 virgl_test_server_SOURCES +=	\
-	vtest_vk.c		\
-	vtest_vk_objects.c \
+	vtest_vk.c				\
+	vtest_vk_commands.c	\
+	vtest_vk_commands.h	\
+	vtest_vk_objects.c	\
 	vtest_vk_objects.h
 endif
 

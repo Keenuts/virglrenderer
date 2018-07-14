@@ -21,14 +21,12 @@ VIRGL_EXPORT int
 virgl_vk_create_device(uint32_t phys_device_id,
                        const VkDeviceCreateInfo *info,
                        uint32_t *device_handle);
-
 VIRGL_EXPORT int
 virgl_vk_allocate_descriptor_set(uint32_t device_handle,
                                  uint32_t pool_id,
                                  uint32_t descriptor_count,
                                  uint32_t *desc_layout_ids,
                                  uint32_t *handles);
-
 VIRGL_EXPORT int
 virgl_vk_create_descriptor_pool(uint32_t device_handle,
                                 const VkDescriptorPoolCreateInfo *vk_info,
@@ -95,4 +93,28 @@ virgl_vk_map_memory(uint32_t device_handle,
 VIRGL_EXPORT int
 virgl_vk_unmap_memory(uint32_t device_handle,
                       uint32_t memory_handle);
+
+VIRGL_EXPORT int
+virgl_vk_create_command_pool(uint32_t device_handle,
+                            const VkCommandPoolCreateInfo *info,
+                            uint32_t *handle);
+
+VIRGL_EXPORT int
+virgl_vk_allocate_command_buffers(uint32_t device_handle,
+                                  uint32_t pool_handle,
+                                  VkCommandBufferAllocateInfo *info,
+                                  uint32_t *handles);
+
+struct virgl_vk_record_info {
+   uint32_t cmd_handle;
+   uint32_t pipeline_handle;
+   uint32_t pipeline_layout_handle;
+   uint32_t descriptor_count;
+   uint32_t dispatch_size[3];
+   uint32_t *descriptor_handles;
+};
+
+VIRGL_EXPORT int
+virgl_vk_record_command(uint32_t device_handle,
+                        const struct virgl_vk_record_info *info);
 #endif

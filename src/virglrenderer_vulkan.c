@@ -9,6 +9,7 @@
 #include "util/u_hash_table.h"
 #include "util/u_pointer.h"
 #include "virgl_vk.h"
+#include "virglrenderer_vulkan.h"
 
 /* functions used in the device's hashtable */
 
@@ -799,4 +800,116 @@ int virgl_vk_unmap_memory(uint32_t device_handle,
 
    memory->map_ptr = NULL;
    RETURN(0);
+}
+
+int virgl_vk_create_command_pool(uint32_t device_handle,
+                                 const VkCommandPoolCreateInfo *info,
+                                 uint32_t *handle)
+{
+   TRACE_IN();
+   VkResult res;
+   vk_device_t *device = NULL;
+   vk_command_pool_t *pool = NULL;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   pool = calloc(1, sizeof(*pool));
+   if (NULL == pool) {
+      RETURN(-3);
+   }
+
+   res = vkCreateCommandPool(device->handle,
+                             info,
+                             NULL,
+                             &pool->handle);
+   if (VK_SUCCESS != res) {
+      free(pool);
+      RETURN(-4);
+   }
+
+   *handle = device_insert_object(device, pool, vkDestroyCommandPool);
+   if (0 == *handle) {
+      free(pool);
+      RETURN(-5);
+   }
+
+   RETURN(res);
+}
+
+static int
+virgl_vk_command_pool_allocate_buffers(vk_device_t *device,
+                                       vk_command_pool_t *pool,
+                                       VkCommandBufferAllocateInfo *info,
+                                       uint32_t *handles)
+{
+   VkResult res;
+   uint32_t count = info->commandBufferCount;
+
+   if (pool->capacity - pool->usage < count) {
+      // we don't allocate exactly what we need, no particular reason */
+      pool->capacity += count;
+      pool->cmds = realloc(pool->cmds,
+                           sizeof(*pool->cmds) * pool->capacity);
+      if (NULL == pool->cmds) {
+         fprintf(stderr, "cmd pool reallocation failed. good luck.\n");
+         return -1;
+      }
+   }
+
+   res = vkAllocateCommandBuffers(device->handle, info, pool->cmds + pool->usage);
+   if (VK_SUCCESS != res) {
+      return -2;
+   }
+
+   pool->usage += count;
+
+   for (uint32_t i = 0; i < count; i++) {
+      /* 0 is an invalid handle */
+      handles[i] = pool->usage + i + 1;
+   }
+   return 0;
+}
+
+int virgl_vk_allocate_command_buffers(uint32_t device_handle,
+                                      uint32_t pool_handle,
+                                      VkCommandBufferAllocateInfo *info,
+                                      uint32_t *handles)
+{
+   TRACE_IN();
+
+   int res;
+   vk_device_t *device = NULL;
+   vk_command_pool_t *pool = NULL;
+
+   device = get_device_from_handle(device_handle);
+   if (NULL == device) {
+      RETURN(-1);
+   }
+
+   pool = device_get_object(device, pool_handle);
+   if (NULL == pool) {
+      RETURN(-2);
+   }
+
+   info->commandPool = pool->handle;
+   res = virgl_vk_command_pool_allocate_buffers(device, pool, info, handles);
+   if (0 > res) {
+      RETURN(-3);
+   }
+
+   RETURN(0);
+}
+
+int virgl_vk_record_command(uint32_t device_handle,
+                            const struct virgl_vk_record_info *info)
+{
+   TRACE_IN();
+
+   UNUSED_PARAMETER(device_handle);
+   UNUSED_PARAMETER(info);
+
+   RETURN(-1);
 }
