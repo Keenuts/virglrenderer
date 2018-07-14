@@ -1,5 +1,5 @@
-#ifndef VTEST_VK_PROTOCOL
-#define VTEST_VK_PROTOCOL
+#ifndef VTEST_VK_OBJECTS
+#define VTEST_VK_OBJECTS
 
 struct payload_create_descriptor_set_layout_intro {
    uint32_t handle;
