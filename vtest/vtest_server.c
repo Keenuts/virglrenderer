@@ -98,14 +98,14 @@ typedef int (*vtest_cmd_fptr)(uint32_t);
 static const vtest_cmd_fptr vtest_commands[] = {
 //int (*static const vtest_commands[])(uint32_t length_dw) = {
     NULL /* CMD ids starts at 1 */,
-    NULL /* vtest_send_caps */,
-    NULL /* vtest_create_resource */,
-    NULL /* vtest_resource_unref */,
-    NULL /* vtest_transfer_get */,
-    NULL /* vtest_transfer_put */,
-    NULL /* vtest_submit_cmd */,
-    NULL /* vtest_resource_busy_wait */,
-    NULL /* vtest_create_renderer */,
+    vtest_send_caps,
+    vtest_create_resource,
+    vtest_resource_unref,
+    vtest_transfer_get,
+    vtest_transfer_put,
+    vtest_submit_cmd,
+    vtest_resource_busy_wait,
+    (vtest_cmd_fptr)vtest_create_renderer,
 #ifdef WITH_VULKAN
     vtest_vk_allocate_command_buffers,
     vtest_vk_allocate_descriptor_sets,

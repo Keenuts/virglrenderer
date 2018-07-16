@@ -107,22 +107,45 @@ int vtest_block_read(int fd, void *buf, int size)
 int vtest_create_renderer(int in_fd, int out_fd, uint32_t length)
 {
    TRACE_IN();
+
    char *vtestname;
-   int ret, ctx;
+   int ret;
+   int ctx = VIRGL_RENDERER_USE_EGL;
 
    renderer.in_fd = in_fd;
    renderer.out_fd = out_fd;
+
+   if (getenv("VTEST_USE_GLX")) {
+      ctx = VIRGL_RENDERER_USE_GLX;
+   } else if (getenv("VTEST_USE_VULKAN")) {
+      ctx = VIRGL_RENDERER_USE_VK;
+   }
+
+   ret = virgl_renderer_init(&renderer,
+         ctx | VIRGL_RENDERER_THREAD_SYNC, &vtest_cbs);
+   if (ret) {
+      fprintf(stderr, "failed to initialise renderer.\n");
+      return -1;
+   }
 
    vtestname = calloc(1, length + 1);
    if (!vtestname)
       return -1;
 
    ret = vtest_block_read(renderer.in_fd, vtestname, length);
-   if (ret != length) {
-      return -1;
+   if (ret != (int)length) {
+      ret = -1;
+      goto end;
    }
 
-   return virgl_renderer_init(&renderer, 0, &vtest_cbs);
+   if (ctx & VIRGL_RENDERER_USE_VK) {
+      return ret;
+   }
+
+   ret = virgl_renderer_context_create(ctx_id, strlen(vtestname), vtestname);
+end:
+   free(vtestname);
+   return ret;
 }
 
 void vtest_destroy_renderer(void)
@@ -147,7 +170,7 @@ int vtest_send_caps(uint32_t length_dw)
     caps_buf = malloc(max_size);
     if (!caps_buf)
 	return -1;
-    
+
     virgl_renderer_fill_caps(1, 1, caps_buf);
 
     hdr_buf[0] = max_size + 1;
@@ -174,8 +197,8 @@ int vtest_create_resource(uint32_t length_dw)
 
     ret = vtest_block_read(renderer.in_fd, &res_create_buf, sizeof(res_create_buf));
     if (ret != sizeof(res_create_buf))
-	return -1;
-	
+      return -1;
+
     args.handle = res_create_buf[VCMD_RES_CREATE_RES_HANDLE];
     args.target = res_create_buf[VCMD_RES_CREATE_TARGET];
     args.format = res_create_buf[VCMD_RES_CREATE_FORMAT];

@@ -312,14 +312,6 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
    dev_cookie = cookie;
    rcbs = cbs;
 
-#ifdef WITH_VULKAN
-   vk_info = virgl_vk_init();
-   if (!vk_info)
-      RETURN(-1);
-   use_context = CONTEXT_VK;
-
-   RETURN(0);
-#else
    if (flags & VIRGL_RENDERER_USE_EGL) {
    #ifdef HAVE_EPOXY_EGL_H
       egl_info = virgl_egl_init();
@@ -340,13 +332,24 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
       fprintf(stderr, "GLX is not supported on this platform\n");
       return -1;
    #endif
+   } else if (flags & VIRGL_RENDERER_USE_VK) {
+   #ifdef WITH_VULKAN
+      vk_info = virgl_vk_init();
+      if (!vk_info)
+         return -1;
+
+      use_context = CONTEXT_VK;
+      return 0;
+   #else
+      fprintf(stderr, "Vulkan is not supported on this platform\n");
+      return -1;
+   #endif
    }
 
    if (flags & VIRGL_RENDERER_THREAD_SYNC)
       renderer_flags |= VREND_USE_THREAD_SYNC;
 
    return vrend_renderer_init(&virgl_cbs, renderer_flags);
-#endif
 }
 
 int virgl_renderer_get_fd_for_texture(uint32_t tex_id, int *fd)
