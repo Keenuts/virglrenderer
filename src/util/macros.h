@@ -8,16 +8,10 @@
 
 #define TRACE_IN() fprintf(stderr, "server: --> %s\n", __func__)
 
-#define TRACE_OUT(...)                                                     \
-   do {                                                                    \
-      const char *fmt = "server: <-- %s (%d)\n";                               \
-      fprintf(stderr, fmt, __func__ __VA_OPT__(,) __VA_ARGS__ , 0);     \
+#define TRACE_OUT(Value)                                             \
+   do {                                                              \
+      fprintf(stderr, "%s: server: <-- (%p)\n", __func__, Value);    \
    } while (0)
-
-
-#define DEBUG_ERR(Fmt, ...) \
-   fprintf(stderr, (Fmt) __VA_OPT__(,) __VA_ARGS__);
-
 #else
 
 #define TRACE_IN()
@@ -26,7 +20,7 @@
 #endif
 
 #define RETURN(Value)         \
-   TRACE_OUT(Value);          \
+   TRACE_OUT(Value);  \
    return Value;
 
 #endif

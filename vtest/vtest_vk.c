@@ -236,7 +236,7 @@ int vtest_vk_read_memory(uint32_t length_dw)
    } while (0);
 
    if (virgl_vk_unmap_memory(info.device_handle, info.memory_handle) < 0) {
-      DEBUG_ERR("%s: unmap failed\n", __func__);
+      fprintf(stderr, "%s: unmap failed\n", __func__);
    }
 
    RETURN(res);
@@ -285,7 +285,7 @@ int vtest_vk_write_memory(uint32_t length_dw)
    } while (0);
 
    if (virgl_vk_unmap_memory(info.device_handle, info.memory_handle) < 0) {
-      DEBUG_ERR("%s: unmap failed\n", __func__);
+      fprintf(stderr, "%s: unmap failed\n", __func__);
    }
 
    result.error_code = res;

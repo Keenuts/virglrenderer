@@ -142,7 +142,6 @@ static int create_simple_object(uint32_t device_id,
 
    device = get_device_from_handle(device_id);
    if (NULL == device) {
-      DEBUG_ERR("invalid device for handle %u\n", device_id);
       RETURN(-1);
    }
 
@@ -153,7 +152,7 @@ static int create_simple_object(uint32_t device_id,
 
    res = create_func(device->handle, create_info, NULL, &vk_handle->content);
    if (VK_SUCCESS != res) {
-      DEBUG_ERR("vk call failed %s\n", vkresult_to_string(res));
+      fprintf(stderr, "vk_call_failed %s\n", vkresult_to_string(res));
       free(vk_handle);
       RETURN(-3);
    }
@@ -165,7 +164,6 @@ static int create_simple_object(uint32_t device_id,
       RETURN(-4);
    }
 
-   printf("creating object handle=%d\n", *handle);
 	RETURN(0);
 }
 
@@ -609,7 +607,6 @@ int virgl_vk_bind_buffer_memory(uint32_t device_handle,
 
    res = vkBindBufferMemory(device->handle, buffer->handle, memory->handle, offset);
    if (VK_SUCCESS != res) {
-      DEBUG_ERR("VkBindBufferMemoru failed: %s", vkresult_to_string(res));
       RETURN(-3);
    }
 
