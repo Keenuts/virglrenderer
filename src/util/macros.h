@@ -10,17 +10,17 @@
 
 #define TRACE_OUT(Value)                                             \
    do {                                                              \
-      fprintf(stderr, "%s: server: <-- (%p)\n", __func__, Value);    \
+      fprintf(stderr, "%s: server: <-- (%d)\n", __func__, Value);    \
    } while (0)
 #else
 
 #define TRACE_IN()
-#define TRACE_OUT(...)
+#define TRACE_OUT(Value)
 
 #endif
 
-#define RETURN(Value)         \
-   TRACE_OUT(Value);  \
+#define RETURN(Value)   \
+   TRACE_OUT(Value);    \
    return Value;
 
 #endif
