@@ -4,7 +4,6 @@
 #include <vulkan/vulkan.h>
 
 #include "virglrenderer_vulkan.h"
-#include "util/macros.h"
 #include "vtest.h"
 #include "os/os_misc.h"
 #include "vtest_protocol.h"
@@ -20,14 +19,14 @@ int vtest_vk_enumerate_devices(UNUSED uint32_t length_dw)
 
    res = virgl_vk_get_device_count(&device_count);
    if (0 > res) {
-      RETURN(res);
+      return res;
    }
 
    result.result = device_count;
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
-   RETURN(0);
+   return 0;
 }
 
 int vtest_vk_get_sparse_properties(UNUSED uint32_t length_dw)
@@ -42,7 +41,7 @@ int vtest_vk_get_sparse_properties(UNUSED uint32_t length_dw)
 
    res = virgl_vk_get_sparse_properties(payload.device_id, &sparse_props);
    if (0 > res) {
-      RETURN(res);
+      return res;
    }
 
    result.result = payload.device_id;
@@ -71,7 +70,7 @@ int vtest_vk_get_queue_family_properties(UNUSED uint32_t length_dw)
                                                &family_count,
                                                &properties);
    if (0 > res) {
-      RETURN(res);
+      return res;
    }
 
    result.result = family_count;
@@ -94,14 +93,12 @@ int vtest_vk_get_device_memory_properties(UNUSED uint32_t length_dw)
 
    VkPhysicalDeviceMemoryProperties properties;
 
-   TRACE_IN();
-
    res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
    CHECK_IO_RESULT(res, sizeof(payload));
 
    res = virgl_vk_get_memory_properties(payload.device_id, &properties);
    if (0 > res) {
-      RETURN(res);
+      return res;
    }
 
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
@@ -139,7 +136,7 @@ int vtest_vk_create_device(UNUSED uint32_t length_dw)
    vk_device_info.pQueueCreateInfos = alloca(sizeof(VkDeviceQueueCreateInfo) *
                                            create_info.queue_info_count);
    if (vk_device_info.pQueueCreateInfos == NULL) {
-      RETURN(-1);
+      return -1;
    }
 
    for (uint32_t i = 0; i < create_info.queue_info_count; i++) {
@@ -191,7 +188,7 @@ int vtest_vk_read_memory(UNUSED uint32_t length_dw)
                              info.size,
                              &data);
    if (0 > res) {
-      RETURN(res);
+      return res;
    }
 
    do {
@@ -244,7 +241,7 @@ int vtest_vk_write_memory(UNUSED uint32_t length_dw)
                              info.size,
                              &data);
    if (0 > res) {
-      RETURN(res);
+      return res;
    }
 
    do {

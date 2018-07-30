@@ -34,7 +34,6 @@
 #include "pipe/p_state.h"
 #include "util/u_format.h"
 #include "util/u_math.h"
-#include "util/macros.h"
 #include "vrend_renderer.h"
 
 #include "virglrenderer.h"

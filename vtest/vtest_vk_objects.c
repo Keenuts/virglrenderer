@@ -4,7 +4,6 @@
 #include <vulkan/vulkan.h>
 
 #include "virglrenderer_vulkan.h"
-#include "util/macros.h"
 #include "vtest.h"
 #include "vtest_protocol.h"
 #include "vtest_vk.h"
@@ -50,7 +49,7 @@ vtest_vk_create_descriptor_pool(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(result));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
 int
@@ -94,7 +93,7 @@ vtest_vk_create_descriptor_set_layout(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(result));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
 /* payload:
@@ -109,8 +108,6 @@ vtest_vk_allocate_descriptor_sets(uint32_t length_dw)
    uint32_t pool_handle;
    uint32_t *set_layout_handles = NULL;
    uint32_t *output_handles = NULL;
-
-   TRACE_IN();
 
    struct payload_allocate_descriptor_sets_intro intro;
    res = vtest_block_read(renderer.in_fd, &intro, sizeof(intro));
@@ -142,7 +139,7 @@ vtest_vk_allocate_descriptor_sets(uint32_t length_dw)
    CHECK_IO_RESULT(res, result.result * sizeof(uint32_t));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
 int
@@ -163,7 +160,7 @@ vtest_vk_create_shader_module(uint32_t length_dw)
    vk_info.codeSize = intro.codeSize;
    shader_code = malloc(vk_info.codeSize);
    if (NULL == shader_code) {
-      RETURN(-1);
+      return -1;
    }
 
    res = vtest_block_read(renderer.in_fd, shader_code, vk_info.codeSize);
@@ -179,7 +176,7 @@ vtest_vk_create_shader_module(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(result));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
 int
@@ -233,7 +230,7 @@ vtest_vk_create_pipeline_layout(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(result));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
 int
@@ -274,7 +271,7 @@ vtest_vk_create_compute_pipelines(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(result));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
 int
@@ -299,7 +296,7 @@ vtest_vk_allocate_memory(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(result));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
 int
@@ -337,7 +334,7 @@ vtest_vk_create_buffer(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(result));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
 int
@@ -360,7 +357,7 @@ vtest_vk_bind_buffer_memory(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(result));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
 int
@@ -410,7 +407,7 @@ vtest_vk_write_descriptor_set(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(result));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
 int
@@ -434,7 +431,7 @@ vtest_vk_create_fence(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(result));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
 int
@@ -461,7 +458,7 @@ vtest_vk_wait_for_fences(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(result));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
 int
@@ -510,5 +507,5 @@ vtest_vk_queue_submit(uint32_t length_dw)
    CHECK_IO_RESULT(res, sizeof(result));
 
    UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }

@@ -29,7 +29,6 @@ typedef struct vk_device {
    struct util_hash_table *objects;
 } vk_device_t;
 
-
 /* Vulkan objects are stored in these handles to keep some state
  * This default handle should never be used.
  * Concider using vk_XXX_t handles instead.

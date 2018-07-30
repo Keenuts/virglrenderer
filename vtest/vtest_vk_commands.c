@@ -4,7 +4,6 @@
 #include <vulkan/vulkan.h>
 
 #include "virglrenderer_vulkan.h"
-#include "util/macros.h"
 #include "vtest.h"
 #include "os/os_misc.h"
 #include "vtest_protocol.h"
@@ -13,8 +12,6 @@
 
 int vtest_vk_create_command_pool(UNUSED uint32_t length_dw)
 {
-   TRACE_IN();
-
    int res;
    struct vtest_result result = { 0 };
    VkCommandPoolCreateInfo vk_info;
@@ -40,8 +37,6 @@ int vtest_vk_create_command_pool(UNUSED uint32_t length_dw)
 
 int vtest_vk_allocate_command_buffers(UNUSED uint32_t length_dw)
 {
-   TRACE_IN();
-
    int res;
    struct vtest_result result = { 0 };
    VkCommandBufferAllocateInfo vk_info;
@@ -77,8 +72,6 @@ int vtest_vk_allocate_command_buffers(UNUSED uint32_t length_dw)
 
 int vtest_vk_record_command(UNUSED uint32_t length_dw)
 {
-   TRACE_IN();
-
    int res;
    struct vtest_result result = { 0 };
    struct payload_command_record_info payload;

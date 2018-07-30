@@ -33,7 +33,6 @@
 #include <fcntl.h>
 
 #include "util.h"
-#include "util/macros.h"
 #include "util/u_memory.h"
 #include "vtest.h"
 #include "vtest_protocol.h"
@@ -140,8 +139,6 @@ static int run_renderer(int in_fd, int out_fd)
    uint32_t header[VTEST_HDR_SIZE];
    int initialized = 0;
 
-   TRACE_IN();
-
    do {
       ret = vtest_wait_for_fd_read(in_fd);
       if (ret < 0) {
@@ -154,8 +151,6 @@ static int run_renderer(int in_fd, int out_fd)
          err = 2;
          break;
       }
-
-      printf("%s: command received (%u).\n", __func__, header[1]);
 
       if (!initialized) {
          /* The first command MUST be VCMD_CREATE_RENDERER */
@@ -194,7 +189,7 @@ static int run_renderer(int in_fd, int out_fd)
    vtest_destroy_renderer();
    close(in_fd);
 
-   RETURN(0);
+   return 0;
 }
 
 int main(int argc, char **argv)

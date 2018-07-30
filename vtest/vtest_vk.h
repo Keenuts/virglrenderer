@@ -12,7 +12,7 @@ int vtest_vk_write_memory(uint32_t length_dw);
 #define CHECK_IO_RESULT(Done, Expected)                                    \
    if ((Done) < (int)(Expected)) {                                         \
       fprintf(stderr, "%s: failed to write back the answer.\n", __func__); \
-      RETURN(-1);                                                          \
+      return -1;                                                           \
    }
 
 #endif

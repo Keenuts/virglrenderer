@@ -134,7 +134,8 @@ virgl_vk_init(void)
       }
 
       /* success path */
-      RETURN(state);
+      printf("Vulkan state created with %d devices.\n", vulkan_state->physical_device_count);
+      return 0;
    } while (0);
 
    /* failure branch */

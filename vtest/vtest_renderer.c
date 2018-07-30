@@ -31,7 +31,6 @@
 
 #include "config.h"
 #include "util.h"
-#include "util/macros.h"
 #include "virglrenderer.h"
 #include "vtest.h"
 #include "vtest_protocol.h"
@@ -107,8 +106,6 @@ int vtest_block_read(int fd, void *buf, int size)
 
 int vtest_create_renderer(int in_fd, int out_fd, uint32_t length)
 {
-   TRACE_IN();
-
    char *vtestname;
    int ret;
    int ctx = VIRGL_RENDERER_USE_EGL;
