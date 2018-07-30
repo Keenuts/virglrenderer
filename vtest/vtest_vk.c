@@ -6,16 +6,14 @@
 #include "virglrenderer_vulkan.h"
 #include "util/macros.h"
 #include "vtest.h"
+#include "os/os_misc.h"
 #include "vtest_protocol.h"
 #include "vtest_vk.h"
 
 extern struct vtest_renderer renderer;
 
-int vtest_vk_enumerate_devices(uint32_t length_dw)
+int vtest_vk_enumerate_devices(UNUSED uint32_t length_dw)
 {
-   TRACE_IN();
-   UNUSED_PARAMETER(length_dw);
-
    uint32_t device_count;
    struct vtest_result result = { 0 };
    int res;
@@ -32,15 +30,12 @@ int vtest_vk_enumerate_devices(uint32_t length_dw)
    RETURN(0);
 }
 
-int vtest_vk_get_sparse_properties(uint32_t length_dw)
+int vtest_vk_get_sparse_properties(UNUSED uint32_t length_dw)
 {
    struct vtest_payload_device_get payload;
    VkPhysicalDeviceSparseProperties sparse_props;
    struct vtest_result result = { 0 };
    int res;
-
-   TRACE_IN();
-   UNUSED_PARAMETER(length_dw);
 
    res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
    CHECK_IO_RESULT(res, sizeof(payload));
@@ -57,10 +52,10 @@ int vtest_vk_get_sparse_properties(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &sparse_props, sizeof(sparse_props));
    CHECK_IO_RESULT(res, sizeof(sparse_props));
 
-   RETURN(0);
+   return 0;
 }
 
-int vtest_vk_get_queue_family_properties(uint32_t length_dw)
+int vtest_vk_get_queue_family_properties(UNUSED uint32_t length_dw)
 {
    struct vtest_payload_device_get payload;
    struct vtest_result result = { 0 };
@@ -68,9 +63,6 @@ int vtest_vk_get_queue_family_properties(uint32_t length_dw)
 
    uint32_t family_count;
    VkQueueFamilyProperties *properties = NULL;
-
-   TRACE_IN();
-   UNUSED_PARAMETER(length_dw);
 
    res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
    CHECK_IO_RESULT(res, sizeof(payload));
@@ -91,10 +83,10 @@ int vtest_vk_get_queue_family_properties(uint32_t length_dw)
                            sizeof(*properties) * family_count);
    CHECK_IO_RESULT(res, sizeof(*properties));
 
-   RETURN(0);
+   return 0;
 }
 
-int vtest_vk_get_device_memory_properties(uint32_t length_dw)
+int vtest_vk_get_device_memory_properties(UNUSED uint32_t length_dw)
 {
    struct vtest_payload_device_get payload;
    struct vtest_result result = { 0 };
@@ -118,11 +110,10 @@ int vtest_vk_get_device_memory_properties(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &properties, sizeof(properties));
    CHECK_IO_RESULT(res, sizeof(properties));
 
-   UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
-int vtest_vk_create_device(uint32_t length_dw)
+int vtest_vk_create_device(UNUSED uint32_t length_dw)
 {
    VkDeviceCreateInfo         vk_device_info;;
    VkDeviceQueueCreateInfo   *vk_queue_info = NULL;
@@ -132,9 +123,6 @@ int vtest_vk_create_device(uint32_t length_dw)
    struct vtest_payload_queue_create   queue_info;
    struct vtest_result result = { 0 };
    int res;
-
-   UNUSED_PARAMETER(length_dw);
-   TRACE_IN();
 
    /* The first payload is a lighter version of the VkDeviceCreationInfo */
    res = vtest_block_read(renderer.in_fd, &create_info, sizeof(create_info));
@@ -177,20 +165,17 @@ int vtest_vk_create_device(uint32_t length_dw)
                                  &vk_device_info,
                                  &result.result);
    if (0 > res) {
-      RETURN(res);
+      return res;
    }
 
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
-   RETURN(0);
+   return 0;
 }
 
-int vtest_vk_read_memory(uint32_t length_dw)
+int vtest_vk_read_memory(UNUSED uint32_t length_dw)
 {
-   TRACE_IN();
-   UNUSED_PARAMETER(length_dw);
-
    uint8_t cached;
    struct vtest_result result = { 0 };
    struct vtest_payload_rw_memory info;
@@ -239,13 +224,11 @@ int vtest_vk_read_memory(uint32_t length_dw)
       fprintf(stderr, "%s: unmap failed\n", __func__);
    }
 
-   RETURN(res);
+   return res;
 }
 
-int vtest_vk_write_memory(uint32_t length_dw)
+int vtest_vk_write_memory(UNUSED uint32_t length_dw)
 {
-   TRACE_IN();
-
    int res = 0;
    uint8_t cached;
    struct vtest_result result = { 0 };
@@ -292,6 +275,5 @@ int vtest_vk_write_memory(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
-   UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }

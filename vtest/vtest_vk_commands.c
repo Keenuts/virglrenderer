@@ -6,11 +6,12 @@
 #include "virglrenderer_vulkan.h"
 #include "util/macros.h"
 #include "vtest.h"
+#include "os/os_misc.h"
 #include "vtest_protocol.h"
 #include "vtest_vk.h"
 #include "vtest_vk_commands.h"
 
-int vtest_vk_create_command_pool(uint32_t length_dw)
+int vtest_vk_create_command_pool(UNUSED uint32_t length_dw)
 {
    TRACE_IN();
 
@@ -34,11 +35,10 @@ int vtest_vk_create_command_pool(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
-   UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
-int vtest_vk_allocate_command_buffers(uint32_t length_dw)
+int vtest_vk_allocate_command_buffers(UNUSED uint32_t length_dw)
 {
    TRACE_IN();
 
@@ -66,17 +66,16 @@ int vtest_vk_allocate_command_buffers(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
    if (0 != result.error_code) {
-      RETURN(result.error_code);
+      return result.error_code;
    }
 
    res = vtest_block_write(renderer.out_fd, handles, sizeof(uint32_t) * result.result);
    CHECK_IO_RESULT(res, sizeof(uint32_t) * result.result);
 
-   UNUSED_PARAMETER(length_dw);
-   RETURN(0);
+   return 0;
 }
 
-int vtest_vk_record_command(uint32_t length_dw)
+int vtest_vk_record_command(UNUSED uint32_t length_dw)
 {
    TRACE_IN();
 
@@ -111,6 +110,5 @@ int vtest_vk_record_command(uint32_t length_dw)
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
 
-   UNUSED_PARAMETER(length_dw);
-   RETURN(result.error_code);
+   return result.error_code;
 }

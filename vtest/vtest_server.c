@@ -34,6 +34,7 @@
 
 #include "util.h"
 #include "util/macros.h"
+#include "util/u_memory.h"
 #include "vtest.h"
 #include "vtest_protocol.h"
 #include "vtest_vk.h"

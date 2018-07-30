@@ -2,7 +2,7 @@
 #define VIRGL_VK_H
 
 #include <vulkan/vulkan.h>
-#include "util/list.h"
+#include "util/u_double_list.h"
 
 struct virgl_vk {
    VkInstance vk_instance;
@@ -11,10 +11,13 @@ struct virgl_vk {
    uint32_t physical_device_count;
 
    struct vk_device *devices;
+   uint32_t device_count;
 };
 
+extern struct virgl_vk *vulkan_state;
+
 typedef struct vk_device {
-   struct list list;
+   struct list_head list;
 
    uint32_t physical_device_id;
    VkDevice handle;
@@ -78,10 +81,9 @@ struct vk_object {
    void (*cleanup_callback)(VkDevice, void*, void*);
 };
 
-extern struct virgl_vk *vk_info;
 const char* vkresult_to_string(VkResult res);
 
-struct virgl_vk* virgl_vk_init();
-void virgl_vk_destroy(struct virgl_vk **state);
+int virgl_vk_init(void);
+void virgl_vk_destroy(void);
 
 #endif

@@ -29,6 +29,7 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "util.h"
 #include "util/macros.h"
 #include "virglrenderer.h"
@@ -117,9 +118,11 @@ int vtest_create_renderer(int in_fd, int out_fd, uint32_t length)
 
    if (getenv("VTEST_USE_GLX")) {
       ctx = VIRGL_RENDERER_USE_GLX;
-   } else if (getenv("VTEST_USE_VULKAN")) {
-      ctx = VIRGL_RENDERER_USE_VK;
    }
+
+#ifdef WITH_VULKAN
+   ctx |= VIRGL_RENDERER_USE_VULKAN;
+#endif
 
    ret = virgl_renderer_init(&renderer,
          ctx | VIRGL_RENDERER_THREAD_SYNC, &vtest_cbs);
@@ -136,10 +139,6 @@ int vtest_create_renderer(int in_fd, int out_fd, uint32_t length)
    if (ret != (int)length) {
       ret = -1;
       goto end;
-   }
-
-   if (ctx & VIRGL_RENDERER_USE_VK) {
-      return ret;
    }
 
    ret = virgl_renderer_context_create(ctx_id, strlen(vtestname), vtestname);

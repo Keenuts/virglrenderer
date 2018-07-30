@@ -39,6 +39,10 @@
 
 #include "virglrenderer.h"
 
+#ifdef WITH_VULKAN
+#include "virgl_vk.h"
+#endif
+
 #ifdef HAVE_EPOXY_EGL_H
 #include "virgl_egl.h"
 static struct virgl_egl *egl_info;
@@ -47,11 +51,6 @@ static struct virgl_egl *egl_info;
 #ifdef HAVE_EPOXY_GLX_H
 #include "virgl_glx.h"
 static struct virgl_glx *glx_info;
-#endif
-
-#ifdef WITH_VULKAN
-#include "virgl_vk.h"
-struct virgl_vk *vk_info;
 #endif
 
 enum {
@@ -293,24 +292,36 @@ void virgl_renderer_cleanup(void *cookie)
       use_context = CONTEXT_NONE;
    }
 #endif
+#ifdef WITH_VULKAN
+   virgl_vk_destroy();
+#endif
 }
 
 int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks *cbs)
 {
    uint32_t renderer_flags = 0;
 
-   TRACE_IN();
-
    if (!cookie || !cbs) {
-      RETURN(-1);
+      return -1;
    }
 
    if (cbs->version != 1) {
-      RETURN(-1);
+      return -1;
    }
 
    dev_cookie = cookie;
    rcbs = cbs;
+
+   if (flags & VIRGL_RENDERER_USE_VULKAN) {
+#ifdef WITH_VULKAN
+      if (0 != virgl_vk_init()) {
+         return -1;
+      }
+#else
+      fprintf(stderr, "Vulkan is not supported on this platform\n");
+      return -1;
+#endif
+   }
 
    if (flags & VIRGL_RENDERER_USE_EGL) {
    #ifdef HAVE_EPOXY_EGL_H
@@ -330,18 +341,6 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
       use_context = CONTEXT_GLX;
    #else
       fprintf(stderr, "GLX is not supported on this platform\n");
-      return -1;
-   #endif
-   } else if (flags & VIRGL_RENDERER_USE_VK) {
-   #ifdef WITH_VULKAN
-      vk_info = virgl_vk_init();
-      if (!vk_info)
-         return -1;
-
-      use_context = CONTEXT_VK;
-      return 0;
-   #else
-      fprintf(stderr, "Vulkan is not supported on this platform\n");
       return -1;
    #endif
    }

@@ -44,26 +44,19 @@ static void vkobj_free(void *handle)
 static VkPhysicalDevice
 get_physical_device_from_handle(uint32_t handle)
 {
-   TRACE_IN();
-
-   if (handle >= vk_info->physical_device_count) {
-      RETURN(VK_NULL_HANDLE);
+   if (handle >= vulkan_state->physical_device_count) {
+      return VK_NULL_HANDLE;
    }
 
-   RETURN(vk_info->physical_devices[handle]);
+   return vulkan_state->physical_devices[handle];
 }
 
 /* Get a logical device from a VGL-HANDLE */
 static struct vk_device*
 get_device_from_handle(uint32_t handle)
 {
-   uint32_t max_device = list_length(&vk_info->devices->list);
-   if (handle >= max_device) {
-      return NULL;
-   }
-
    struct vk_device *it = NULL;
-   LIST_FOR_EACH(it, vk_info->devices->list, list) {
+   LIST_FOR_EACH_ENTRY(it, &vulkan_state->devices->list, list) {
       if (handle == 0)
          break;
       handle--;
@@ -182,9 +175,10 @@ static int initialize_vk_device(uint32_t phys_device_handle,
       return -1;
    }
 
-   *device_id = list_length(&vk_info->devices->list);
+   *device_id = vulkan_state->device_count;
+   vulkan_state->device_count++;
 
-   list_init(&device->list);
+   LIST_INITHEAD(&device->list);
    device->handle = dev;
    device->physical_device_id = phys_device_handle;
 
@@ -215,18 +209,16 @@ static int initialize_vk_device(uint32_t phys_device_handle,
    device->objects = util_hash_table_create(hash_func, vkobj_compare, vkobj_free);
 
    /* registering device */
-   list_append(&vk_info->devices->list, &device->list);
+   LIST_ADDTAIL(&vulkan_state->devices->list, &device->list);
    return 0;
 }
 
 
 int virgl_vk_get_device_count(uint32_t *device_count)
 {
-   TRACE_IN();
+   *device_count = vulkan_state->physical_device_count;
 
-   *device_count = vk_info->physical_device_count;
-
-   RETURN(0);
+   return 0;
 }
 
 int virgl_vk_get_sparse_properties(uint32_t device_id,
@@ -234,13 +226,11 @@ int virgl_vk_get_sparse_properties(uint32_t device_id,
 {
    VkPhysicalDeviceProperties props;
 
-   TRACE_IN();
-
-   if (device_id >= vk_info->physical_device_count) {
-      RETURN(-1);
+   if (device_id >= vulkan_state->physical_device_count) {
+      return -1;
    }
 
-   vkGetPhysicalDeviceProperties(vk_info->physical_devices[device_id], &props);
+   vkGetPhysicalDeviceProperties(vulkan_state->physical_devices[device_id], &props);
    memcpy(sparse_props, &props.sparseProperties, sizeof(*sparse_props));
 
    RETURN(0);
@@ -249,14 +239,12 @@ int virgl_vk_get_sparse_properties(uint32_t device_id,
 int virgl_vk_get_memory_properties(uint32_t phys_device_handle,
                                    VkPhysicalDeviceMemoryProperties *props)
 {
-   TRACE_IN();
-
-   if (phys_device_handle >= vk_info->physical_device_count) {
-      RETURN(-1);
+   if (phys_device_handle >= vulkan_state->physical_device_count) {
+      return -1;
    }
 
    memset(props, 0, sizeof(*props));
-   vkGetPhysicalDeviceMemoryProperties(vk_info->physical_devices[phys_device_handle],
+   vkGetPhysicalDeviceMemoryProperties(vulkan_state->physical_devices[phys_device_handle],
                                        props);
 
    RETURN(0);

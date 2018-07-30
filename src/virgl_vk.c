@@ -3,8 +3,11 @@
 #include <string.h>
 #include <vulkan/vulkan.h>
 
-#include "util/macros.h"
+#include "util/u_double_list.h"
+#include "util/u_memory.h"
 #include "virgl_vk.h"
+
+struct virgl_vk *vulkan_state;
 
 const char* vkresult_to_string(VkResult res)
 {
@@ -47,63 +50,56 @@ const char* vkresult_to_string(VkResult res)
    }
 }
 
-static void check_vkresult(const char* fname, VkResult res)
+static int
+init_physical_devices(void)
 {
-   if (res == VK_SUCCESS) {
-      fprintf(stderr, "\033[32m%s\033[0m\n", fname);
-      return;
-   }
-
-   fprintf(stderr, "\033[31m%s = %s\033[0m\n", fname, vkresult_to_string(res));
-   abort();
-}
-
-#define CALL_VK(Func, Param) check_vkresult(#Func, Func Param)
-
-static int init_physical_devices(struct virgl_vk *state)
-{
-   TRACE_IN();
-
    uint32_t device_count;
+   VkResult res;
 
-   state->devices = malloc(sizeof(*state->devices));
-   if (NULL == state->devices) {
-      RETURN(-1);
+   vulkan_state->devices = CALLOC_STRUCT(vk_device);
+   if (NULL == vulkan_state->devices) {
+      return -1;
    }
 
-   list_init(&state->devices->list);
+   LIST_INITHEAD(&vulkan_state->devices->list);
 
-   CALL_VK(vkEnumeratePhysicalDevices, (state->vk_instance, &device_count, NULL));
+   res = vkEnumeratePhysicalDevices(vulkan_state->vk_instance, &device_count, NULL);
+   if (VK_SUCCESS != res) {
+      fprintf(stderr, "vulkan device enumeration failed (%s)", vkresult_to_string(res));
+      return -1;
+   }
    if (device_count == 0) {
       fprintf(stderr, "No device supports Vulkan.\n");
-      RETURN(-1);
+      return -1;
    }
 
-   state->physical_devices = malloc(sizeof(*state->physical_devices) * device_count);
-   if (state->physical_devices == NULL) {
-      RETURN(-1);
+   vulkan_state->physical_devices = CALLOC(device_count, sizeof(*vulkan_state->physical_devices));
+   if (vulkan_state->physical_devices == NULL) {
+      return -1;
    }
 
-   CALL_VK(vkEnumeratePhysicalDevices, (state->vk_instance,
-                                        &device_count,
-                                        state->physical_devices));
+   res = vkEnumeratePhysicalDevices(vulkan_state->vk_instance,
+                                    &device_count,
+                                    vulkan_state->physical_devices);
+   if (VK_SUCCESS != res) {
+      fprintf(stderr, "vulkan device enumeration failed (%s)", vkresult_to_string(res));
+      return -1;
+   }
 
-   state->physical_device_count = device_count;
-   RETURN(0);
+   vulkan_state->physical_device_count = device_count;
+   return 0;
 }
 
-struct virgl_vk* virgl_vk_init()
+int
+virgl_vk_init(void)
 {
-   struct virgl_vk *state = NULL;
    VkResult vk_res;
    VkApplicationInfo application_info = { 0 };
    VkInstanceCreateInfo info = { 0 };
 
-   TRACE_IN();
-
-   state = malloc(sizeof(*state));
-   if (state == NULL) {
-      RETURN(state);
+   vulkan_state = CALLOC_STRUCT(virgl_vk);
+   if (NULL == vulkan_state) {
+      return -1;
    }
 
    application_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -127,13 +123,13 @@ struct virgl_vk* virgl_vk_init()
    info.ppEnabledLayerNames = validation_layers;
 
    do {
-      vk_res = vkCreateInstance(&info, NULL, &state->vk_instance);
-      if (vk_res != VK_SUCCESS) {
+      vk_res = vkCreateInstance(&info, NULL, &vulkan_state->vk_instance);
+      if (VK_SUCCESS != vk_res) {
          fprintf(stderr, "Vk init failed (%s)\n", vkresult_to_string(vk_res));
          break;
       }
 
-      if (init_physical_devices(state) < 0) {
+      if (0 != init_physical_devices()) {
          break;
       }
 
@@ -142,18 +138,24 @@ struct virgl_vk* virgl_vk_init()
    } while (0);
 
    /* failure branch */
-   virgl_vk_destroy(&state);
-   RETURN(state);
+   virgl_vk_destroy();
+   return -1;
 }
 
-void virgl_vk_destroy(struct virgl_vk **state)
+void
+virgl_vk_destroy(void)
 {
-   if ((*state)->vk_instance != VK_NULL_HANDLE) {
-      vkDestroyInstance((*state)->vk_instance, NULL);
-      (*state)->vk_instance = VK_NULL_HANDLE;
+   if (NULL == vulkan_state) {
+      return;
    }
 
-   free((*state)->physical_devices);
-   free(*state);
-   *state = NULL;
+   if (VK_NULL_HANDLE != vulkan_state->vk_instance) {
+      vkDestroyInstance(vulkan_state->vk_instance, NULL);
+      vulkan_state->vk_instance = VK_NULL_HANDLE;
+   }
+
+   FREE(vulkan_state->devices);
+   FREE(vulkan_state->physical_devices);
+   FREE(vulkan_state);
+   vulkan_state = NULL;
 }
