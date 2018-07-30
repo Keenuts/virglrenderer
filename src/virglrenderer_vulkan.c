@@ -7,6 +7,7 @@
 
 #include "util/u_hash_table.h"
 #include "util/u_pointer.h"
+#include "util/u_memory.h"
 #include "virgl_vk.h"
 #include "virglrenderer_vulkan.h"
 
@@ -157,15 +158,54 @@ static int create_simple_object(uint32_t device_id,
 	return 0;
 }
 
-static int initialize_vk_device(uint32_t phys_device_handle,
-                                VkDevice dev,
-                                const VkDeviceCreateInfo *info,
-                                uint32_t *device_id)
+static int
+device_initialize_queues(uint32_t phys_device_handle,
+                         VkDevice vk_device,
+                         const VkDeviceCreateInfo *info,
+                         struct vk_device *device)
 {
-   struct vk_device *device;
    const VkDeviceQueueCreateInfo *queue_info;
 
-   device = calloc(1, sizeof(*device));
+   device->queue_count = 0;
+   for (uint32_t i = 0; i < info->queueCreateInfoCount; i++) {
+      device->queue_count += info->pQueueCreateInfos[i].queueCount;
+   }
+
+   device->queues = CALLOC(device->queue_count, sizeof(VkQueue));
+   if (device->queues == NULL) {
+      return -1;
+   }
+
+   uint32_t id = 0;
+   for (uint32_t i = 0; i < info->queueCreateInfoCount; i++) {
+      queue_info = info->pQueueCreateInfos + i;
+
+      for (uint32_t j = 0; j < queue_info->queueCount; j++) {
+         vkGetDeviceQueue(vk_device,
+                          queue_info->queueFamilyIndex,
+                          j,
+                          device->queues + id);
+         id += 1;
+      }
+   }
+
+   return 0;
+};
+
+static int
+device_initialize_command_pools(struct vk_device *device)
+{
+   return 0;
+}
+
+static int
+initialize_vk_device(uint32_t phys_device_handle,
+                     VkDevice dev,
+                     const VkDeviceCreateInfo *info,
+                     uint32_t *device_id)
+{
+   struct vk_device *device;
+   device = CALLOC_STRUCT(vk_device);
    if (device == NULL) {
       return -1;
    }
@@ -178,30 +218,21 @@ static int initialize_vk_device(uint32_t phys_device_handle,
    device->physical_device_id = phys_device_handle;
 
    /* initializing device queues */
-   device->queue_count = 0;
-   for (uint32_t i = 0; i < info->queueCreateInfoCount; i++) {
-      device->queue_count += info->pQueueCreateInfos[i].queueCount;
-   }
-
-   device->queues = malloc(sizeof(VkQueue) * device->queue_count);
-   if (device->queues == NULL) {
+   if (0 != device_initialize_queues(phys_device_handle, dev, info, device)) {
       free(device);
-      return -1;
+      return -2;
    }
 
-   uint32_t id = 0;
-   for (uint32_t i = 0; i < info->queueCreateInfoCount; i++) {
-      queue_info = info->pQueueCreateInfos + i;
-
-      for (uint32_t j = 0; j < queue_info->queueCount; j++) {
-         vkGetDeviceQueue(dev, queue_info->queueFamilyIndex, j, device->queues + id);
-         id += 1;
-      }
+   if (0 != device_initialize_command_pools(device)) {
+      free(device);
+      return -3;
    }
 
    /* creating device resource maps */
    device->next_handle = 1;
-   device->objects = util_hash_table_create(hash_func, vkobj_compare, vkobj_free);
+   device->objects = util_hash_table_create(hash_func,
+                                            vkobj_compare,
+                                            vkobj_free);
 
    /* registering device */
    LIST_ADDTAIL(&vulkan_state->devices->list, &device->list);
