@@ -105,7 +105,7 @@ virgl_vk_init(void)
    application_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
    application_info.pApplicationName = "virglrenderer";
    application_info.applicationVersion = 1;
-   application_info.pEngineName = "potatoe";
+   application_info.pEngineName = NULL;
    application_info.engineVersion = 1;
    application_info.apiVersion = VK_MAKE_VERSION(1,1,0);
 
