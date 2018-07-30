@@ -71,7 +71,7 @@ device_insert_object(struct vk_device *dev, void *vk_handle, void *callback)
 {
    struct vk_object *object = NULL;
 
-   object = malloc(sizeof(*object));
+   object = CALLOC_STRUCT(vk_object);
    if (NULL == object) {
       return 0;
    }
@@ -136,7 +136,7 @@ static int create_simple_object(uint32_t device_id,
       return -1;
    }
 
-   vk_handle = calloc(1, vk_handle_size);
+   vk_handle = CALLOC(1, vk_handle_size);
    if (NULL == vk_handle) {
       return -2;
    }
@@ -289,7 +289,7 @@ int virgl_vk_get_queue_family_properties(uint32_t device_id,
 
    vkGetPhysicalDeviceQueueFamilyProperties(dev, family_count, NULL);
 
-   *props = malloc(sizeof(VkQueueFamilyProperties) * *family_count);
+   *props = CALLOC(*family_count, sizeof(VkQueueFamilyProperties));
    if (*props == NULL) {
       *family_count = 0;
       return -1;
@@ -351,7 +351,7 @@ int virgl_vk_allocate_descriptor_set(uint32_t device_handle,
    vk_layouts = alloca(sizeof(*vk_layouts) * descriptor_count);
    vk_sets = alloca(sizeof(*vk_sets) * descriptor_count);
 
-   sets = malloc(sizeof(*sets) * descriptor_count);
+   sets = CALLOC(descriptor_count, sizeof(*sets));
    if (NULL == sets) {
       free(sets);
       return -2;
@@ -496,7 +496,7 @@ int virgl_vk_create_compute_pipelines(uint32_t device_handle,
       return -1;
    }
 
-   pipeline = malloc(sizeof(*pipeline));
+   pipeline = CALLOC(1, sizeof(*pipeline));
    if (NULL == pipeline) {
       return -2;
    }
@@ -793,7 +793,7 @@ int virgl_vk_create_command_pool(uint32_t device_handle,
       return -1;
    }
 
-   pool = calloc(1, sizeof(*pool));
+   pool = CALLOC(1, sizeof(*pool));
    if (NULL == pool) {
       return -3;
    }
@@ -827,14 +827,15 @@ virgl_vk_command_pool_allocate_buffers(vk_device_t *device,
 
    if (pool->capacity - pool->usage < count) {
       // we don't allocate exactly what we need, no particular reason */
-      pool->capacity += count;
-      pool->cmds = realloc(pool->cmds,
-                           sizeof(*pool->cmds) * pool->capacity);
+      pool->cmds = REALLOC(pool->cmds,
+                           sizeof(*pool->cmds) * pool->capacity,
+                           sizeof(*pool->cmds) * (pool->capacity + count));
       if (NULL == pool->cmds) {
          fprintf(stderr, "cmd pool reallocation failed. good luck.\n");
          return -1;
       }
 
+      pool->capacity += count;
       memset(pool->cmds + pool->usage, 0, sizeof(*pool->cmds) * count);
    }
 
@@ -880,6 +881,9 @@ int virgl_vk_allocate_command_buffers(uint32_t device_handle,
    return 0;
 }
 
+/* NOTE:
+ *  for now, this function only handles compute operations.
+ */
 int virgl_vk_record_command(uint32_t device_handle,
                             const struct virgl_vk_record_info *info)
 {

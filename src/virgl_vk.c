@@ -63,17 +63,23 @@ init_physical_devices(void)
 
    LIST_INITHEAD(&vulkan_state->devices->list);
 
-   res = vkEnumeratePhysicalDevices(vulkan_state->vk_instance, &device_count, NULL);
+   res = vkEnumeratePhysicalDevices(vulkan_state->vk_instance,
+                                    &device_count,
+                                    NULL);
    if (VK_SUCCESS != res) {
-      fprintf(stderr, "vulkan device enumeration failed (%s)", vkresult_to_string(res));
+      fprintf(stderr, "vulkan device enumeration failed (%s)",
+                      vkresult_to_string(res));
       return -1;
    }
+
    if (device_count == 0) {
       fprintf(stderr, "No device supports Vulkan.\n");
       return -1;
    }
 
-   vulkan_state->physical_devices = CALLOC(device_count, sizeof(*vulkan_state->physical_devices));
+   vulkan_state->physical_devices = CALLOC(
+      device_count, sizeof(*vulkan_state->physical_devices));
+
    if (vulkan_state->physical_devices == NULL) {
       return -1;
    }
