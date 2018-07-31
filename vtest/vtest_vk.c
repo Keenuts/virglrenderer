@@ -11,105 +11,6 @@
 
 extern struct vtest_renderer renderer;
 
-int vtest_vk_enumerate_devices(UNUSED uint32_t length_dw)
-{
-   uint32_t device_count;
-   struct vtest_result result = { 0 };
-   int res;
-
-   res = virgl_vk_get_device_count(&device_count);
-   if (0 > res) {
-      return res;
-   }
-
-   result.result = device_count;
-   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
-   CHECK_IO_RESULT(res, sizeof(result));
-
-   return 0;
-}
-
-int vtest_vk_get_sparse_properties(UNUSED uint32_t length_dw)
-{
-   struct vtest_payload_device_get payload;
-   VkPhysicalDeviceSparseProperties sparse_props;
-   struct vtest_result result = { 0 };
-   int res;
-
-   res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
-   CHECK_IO_RESULT(res, sizeof(payload));
-
-   res = virgl_vk_get_sparse_properties(payload.device_id, &sparse_props);
-   if (0 > res) {
-      return res;
-   }
-
-   result.result = payload.device_id;
-   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
-   CHECK_IO_RESULT(res, sizeof(result));
-
-   res = vtest_block_write(renderer.out_fd, &sparse_props, sizeof(sparse_props));
-   CHECK_IO_RESULT(res, sizeof(sparse_props));
-
-   return 0;
-}
-
-int vtest_vk_get_queue_family_properties(UNUSED uint32_t length_dw)
-{
-   struct vtest_payload_device_get payload;
-   struct vtest_result result = { 0 };
-   int res;
-
-   uint32_t family_count;
-   VkQueueFamilyProperties *properties = NULL;
-
-   res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
-   CHECK_IO_RESULT(res, sizeof(payload));
-
-   res = virgl_vk_get_queue_family_properties(payload.device_id,
-                                               &family_count,
-                                               &properties);
-   if (0 > res) {
-      return res;
-   }
-
-   result.result = family_count;
-   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
-   CHECK_IO_RESULT(res, sizeof(result));
-
-   res = vtest_block_write(renderer.out_fd,
-                           properties,
-                           sizeof(*properties) * family_count);
-   CHECK_IO_RESULT(res, sizeof(*properties));
-
-   return 0;
-}
-
-int vtest_vk_get_device_memory_properties(UNUSED uint32_t length_dw)
-{
-   struct vtest_payload_device_get payload;
-   struct vtest_result result = { 0 };
-   int res;
-
-   VkPhysicalDeviceMemoryProperties properties;
-
-   res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
-   CHECK_IO_RESULT(res, sizeof(payload));
-
-   res = virgl_vk_get_memory_properties(payload.device_id, &properties);
-   if (0 > res) {
-      return res;
-   }
-
-   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
-   CHECK_IO_RESULT(res, sizeof(result));
-
-   res = vtest_block_write(renderer.out_fd, &properties, sizeof(properties));
-   CHECK_IO_RESULT(res, sizeof(properties));
-
-   return 0;
-}
-
 int vtest_vk_create_device(UNUSED uint32_t length_dw)
 {
    VkDeviceCreateInfo         vk_device_info;;
@@ -167,6 +68,105 @@ int vtest_vk_create_device(UNUSED uint32_t length_dw)
 
    res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
    CHECK_IO_RESULT(res, sizeof(result));
+
+   return 0;
+}
+
+int vtest_vk_enumerate_devices(UNUSED uint32_t length_dw)
+{
+   uint32_t device_count;
+   struct vtest_result result = { 0 };
+   int res;
+
+   res = virgl_vk_get_device_count(&device_count);
+   if (0 > res) {
+      return res;
+   }
+
+   result.result = device_count;
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   return 0;
+}
+
+int vtest_vk_get_device_memory_properties(UNUSED uint32_t length_dw)
+{
+   struct vtest_payload_device_get payload;
+   struct vtest_result result = { 0 };
+   int res;
+
+   VkPhysicalDeviceMemoryProperties properties;
+
+   res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
+   CHECK_IO_RESULT(res, sizeof(payload));
+
+   res = virgl_vk_get_memory_properties(payload.device_id, &properties);
+   if (0 > res) {
+      return res;
+   }
+
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   res = vtest_block_write(renderer.out_fd, &properties, sizeof(properties));
+   CHECK_IO_RESULT(res, sizeof(properties));
+
+   return 0;
+}
+
+int vtest_vk_get_queue_family_properties(UNUSED uint32_t length_dw)
+{
+   struct vtest_payload_device_get payload;
+   struct vtest_result result = { 0 };
+   int res;
+
+   uint32_t family_count;
+   VkQueueFamilyProperties *properties = NULL;
+
+   res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
+   CHECK_IO_RESULT(res, sizeof(payload));
+
+   res = virgl_vk_get_queue_family_properties(payload.device_id,
+                                               &family_count,
+                                               &properties);
+   if (0 > res) {
+      return res;
+   }
+
+   result.result = family_count;
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   res = vtest_block_write(renderer.out_fd,
+                           properties,
+                           sizeof(*properties) * family_count);
+   CHECK_IO_RESULT(res, sizeof(*properties));
+
+   return 0;
+}
+
+int vtest_vk_get_sparse_properties(UNUSED uint32_t length_dw)
+{
+   struct vtest_payload_device_get payload;
+   VkPhysicalDeviceSparseProperties sparse_props;
+   struct vtest_result result = { 0 };
+   int res;
+
+   res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
+   CHECK_IO_RESULT(res, sizeof(payload));
+
+   res = virgl_vk_get_sparse_properties(payload.device_id, &sparse_props);
+   if (0 > res) {
+      return res;
+   }
+
+   result.result = payload.device_id;
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+
+   res = vtest_block_write(renderer.out_fd, &sparse_props, sizeof(sparse_props));
+   CHECK_IO_RESULT(res, sizeof(sparse_props));
 
    return 0;
 }
