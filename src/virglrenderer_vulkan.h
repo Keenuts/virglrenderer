@@ -129,6 +129,12 @@ virgl_vk_wait_for_fences(uint32_t device_handle,
                          uint32_t *handles,
                          uint32_t wait_all,
                          uint64_t timeout);
+VIRGL_EXPORT int
+virgl_vk_destroy_object(uint32_t device_handle,
+                        uint32_t object_handle);
+
+VIRGL_EXPORT int
+virgl_vk_destroy_device(uint32_t device_handle);
 
 struct virgl_vk_submit_info {
    uint32_t device_handle;

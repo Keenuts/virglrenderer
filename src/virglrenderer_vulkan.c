@@ -1083,3 +1083,53 @@ int virgl_vk_queue_submit(const struct virgl_vk_submit_info *info)
 
    return vkQueueSubmit(queue, 1, &vk_info, fence);
 }
+
+int
+virgl_vk_destroy_object(uint32_t device_handle,
+                        uint32_t handle)
+{
+   vk_device_t *vk_device = NULL;
+   vk_device = get_device_from_handle(device_handle);
+   if (NULL == vk_device) {
+      return -1;
+   }
+
+   util_hash_table_remove(vk_device->objects, intptr_to_pointer(handle));
+   return 0;
+}
+
+static void
+deinit_device(vk_device_t *device)
+{
+   util_hash_table_destroy(device->objects);
+
+   /* About descriptor set layouts:
+    *   This issue is pretty much the same as the commands one.
+    *   A descriptor is linked to a pool.
+    *   Right now, the object allocation mechanism is too rudimentary.
+    *   I didn't took these kind of objects into concideration.
+    *
+    *   This should be taken into account for the next iteration
+    */
+   fprintf(stderr, "FIXME: descriptor layouts have not been cleaned-up.\n");
+}
+
+int
+virgl_vk_destroy_device(uint32_t device_handle)
+{
+   vk_device_t *it = NULL;
+   vk_device_t *storage = NULL;
+
+   LIST_FOR_EACH_ENTRY_SAFE(it, storage, &vulkan_state->devices->list, list) {
+      if (0 == device_handle) {
+
+         LIST_DEL(&it->list);
+         deinit_device(it);
+         free(it);
+
+         return 0;
+      }
+   }
+
+   return -1;
+}
