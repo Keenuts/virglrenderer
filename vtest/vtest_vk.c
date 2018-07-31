@@ -72,6 +72,39 @@ int vtest_vk_create_device(UNUSED uint32_t length_dw)
    return 0;
 }
 
+int
+vtest_vk_destroy_device(UNUSED uint32_t length_dw)
+{
+   struct vtest_payload_destroy_device payload;
+   struct vtest_result result = { 0 };
+   int res;
+
+   res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
+   CHECK_IO_RESULT(res, (int)sizeof(payload));
+
+   result.result = virgl_vk_destroy_device(payload.device_handle);
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+   return 0;
+}
+
+int
+vtest_vk_destroy_object(UNUSED uint32_t length_dw)
+{
+   struct vtest_payload_destroy_object payload;
+   struct vtest_result result = { 0 };
+   int res;
+
+   res = vtest_block_read(renderer.in_fd, &payload, sizeof(payload));
+   CHECK_IO_RESULT(res, (int)sizeof(payload));
+
+   result.result = virgl_vk_destroy_object(payload.device_handle,
+                                           payload.object_handle);
+   res = vtest_block_write(renderer.out_fd, &result, sizeof(result));
+   CHECK_IO_RESULT(res, sizeof(result));
+   return 0;
+}
+
 int vtest_vk_enumerate_devices(UNUSED uint32_t length_dw)
 {
    uint32_t device_count;

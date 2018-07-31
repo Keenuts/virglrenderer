@@ -130,6 +130,8 @@ static const vtest_cmd_fptr vtest_commands[] = {
     vtest_vk_wait_for_fences,
     vtest_vk_write_descriptor_set,
     vtest_vk_write_memory,
+    vtest_vk_destroy_object,
+    vtest_vk_destroy_device,
 #endif
 };
 

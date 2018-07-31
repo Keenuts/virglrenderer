@@ -64,18 +64,23 @@
 #define VCMD_VK_CREATE_DESCRIPTOR_POOL                16
 #define VCMD_VK_CREATE_DESCRIPTOR_SET_LAYOUT          17
 #define VCMD_VK_CREATE_DEVICE                         18
-#define VCMD_VK_CREATE_PIPELINE_LAYOUT                19
-#define VCMD_VK_CREATE_SHADER_MODULE                  20
-#define VCMD_VK_ENUMERATE_PHYSICAL_DEVICES            21
-#define VCMD_VK_GET_DEVICE_MEMORY                     22
-#define VCMD_VK_GET_PHYSICAL_DEVICE_SPARCE_PROPERTIES 23
-#define VCMD_VK_GET_QUEUE_FAMILY_PROPS                24
-#define VCMD_VK_READ_MEMORY                           25
-#define VCMD_VK_RECORD_COMMAND                        26
-#define VCMD_VK_WRITE_DESCRIPTOR_SET                  27
-#define VCMD_VK_WRITE_MEMORY                          28
+#define VCMD_VK_CREATE_FENCE                          19
+#define VCMD_VK_CREATE_PIPELINE_LAYOUT                20
+#define VCMD_VK_CREATE_SHADER_MODULE                  21
+#define VCMD_VK_ENUMERATE_PHYSICAL_DEVICES            22
+#define VCMD_VK_GET_DEVICE_MEMORY                     23
+#define VCMD_VK_GET_PHYSICAL_DEVICE_SPARCE_PROPERTIES 24
+#define VCMD_VK_GET_QUEUE_FAMILY_PROPS                25
+#define VCMD_VK_QUEUE_SUBMIT                          26
+#define VCMD_VK_READ_MEMORY                           27
+#define VCMD_VK_RECORD_COMMAND                        28
+#define VCMD_VK_WAIT_FOR_FENCES                       29
+#define VCMD_VK_WRITE_DESCRIPTOR_SET                  30
+#define VCMD_VK_WRITE_MEMORY                          31
+#define VCMD_VK_DESTROY_OBJECT                        32
+#define VCMD_VK_DESTROY_DEVICE                        33
 
-#define VCMD_COMMAND_COUNT                            28
+#define VCMD_COMMAND_COUNT                            33
 
 #define VCMD_RES_CREATE_SIZE 10
 #define VCMD_RES_CREATE_RES_HANDLE 0
@@ -143,6 +148,15 @@ struct vtest_payload_device_create {
    VkPhysicalDeviceFeatures features;
 
    uint32_t queue_info_count;
+};
+
+struct vtest_payload_destroy_device {
+   uint32_t device_handle;
+};
+
+struct vtest_payload_destroy_object {
+   uint32_t device_handle;
+   uint32_t object_handle;
 };
 
 struct vtest_payload_rw_memory {
