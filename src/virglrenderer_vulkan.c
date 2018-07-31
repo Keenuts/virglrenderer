@@ -34,7 +34,10 @@ static void vkobj_free(void *handle)
 {
    struct vk_object *obj = handle;
 
-   obj->cleanup_callback(obj->vk_device, obj->vk_handle->content, NULL);
+   if (NULL != obj->cleanup_callback) {
+      obj->cleanup_callback(obj->vk_device, obj->vk_handle->content, NULL);
+   }
+
    free(obj);
 }
 
@@ -382,7 +385,7 @@ int virgl_vk_allocate_descriptor_set(uint32_t device_handle,
 
    for (uint32_t i = 0; i < descriptor_count; i++) {
       sets[i].handle = vk_sets[i];
-      handles[i] = device_insert_object(device, sets + i, vkFreeDescriptorSets);
+      handles[i] = device_insert_object(device, sets + i, NULL);
       if (0 != handles[i]) {
          /* success path */
          continue;
