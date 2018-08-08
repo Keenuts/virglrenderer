@@ -49,9 +49,9 @@ libvrend_la_SOURCES += \
 endif
 
 if WITH_VULKAN
-libvrend_la_SOURCES += \
-	virgl_vk.h \
-	virgl_vk.c
+libvrend_la_SOURCES += 	\
+	vrend_vk.c				\
+	vrend_vk.h
 endif
 
 lib_LTLIBRARIES = libvirglrenderer.la

@@ -8,7 +8,7 @@
 #include "util/u_hash_table.h"
 #include "util/u_pointer.h"
 #include "util/u_memory.h"
-#include "virgl_vk.h"
+#include "vrend_vk.h"
 #include "virglrenderer_vulkan.h"
 
 /* functions used in the device's hashtable */

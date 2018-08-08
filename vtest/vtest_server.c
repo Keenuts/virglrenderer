@@ -32,6 +32,7 @@
 #include <sys/un.h>
 #include <fcntl.h>
 
+#include "config.h"
 #include "util.h"
 #include "util/u_memory.h"
 #include "vtest.h"

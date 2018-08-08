@@ -4,7 +4,16 @@
 #include <vulkan/vulkan.h>
 #include "util/u_double_list.h"
 
-struct virgl_vk {
+/* This struct contains the state of our Vulkan module
+*
+* vk_instance: one instance per virglrenderer process.
+* physical_devices: contiguous array of VkPhysicalDevice*.
+*                   Devices are enumerated on instance creation.
+*
+* devices: list of VkDevice wrappers. Each item in this list reprensents
+*          a vulkan application using virglrenderer.
+*/
+struct vrend_vk {
    VkInstance vk_instance;
 
    VkPhysicalDevice *physical_devices;
@@ -14,8 +23,22 @@ struct virgl_vk {
    uint32_t device_count;
 };
 
-extern struct virgl_vk *vulkan_state;
+extern struct vrend_vk *vulkan_state;
 
+/* This struct contains the state of ONE Vulkan application running using vgl
+*
+* physical_device_id: this is the index of the physical device in use
+*                     (in the vrend_vk.physical_devices array)
+* handle: The VkDevice handle
+*
+* Queue creation if forwarded. Thus, we store the VkQueue handles here.
+* queue_count: number of queues created by the application
+* queues: array of VkQueue handles
+*
+* next_handle: next handle the device will use when creating an object
+* objects: this hashtable stores every Vulkan objects.
+*          All objects are wrapped in a struct defined bellow.
+*/
 typedef struct vk_device {
    struct list_head list;
 
@@ -64,7 +87,10 @@ typedef struct {
 typedef struct {
    VkCommandPool handle;
 
-   //FIXME: this array does not have to be contiguous
+   /* For now, commanbuffer arrays are contiguous. It's not
+    * needed, and having a large continguous array might cause issues.
+    * SHOULD be canged
+    */
    VkCommandBuffer *cmds;
    uint32_t usage;
    uint32_t capacity;
@@ -80,9 +106,11 @@ struct vk_object {
    void (*cleanup_callback)(VkDevice, void*, void*);
 };
 
+/* converts a VkResult to the readable string */
 const char* vkresult_to_string(VkResult res);
 
-int virgl_vk_init(void);
-void virgl_vk_destroy(void);
+/* vulkan state management functions */
+int vrend_vk_init(void);
+void vrend_vk_destroy(void);
 
 #endif

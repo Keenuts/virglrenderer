@@ -129,16 +129,17 @@ AS_IF([test "x$with_glx" = "xyes"], [
 ])
 AM_CONDITIONAL([WITH_GLX], [test "x$with_glx" = "xyes"])
 
-AC_ARG_WITH([vulkan], AS_HELP_STRING([--with-vulkan], [enable vulkan(experimental)]))
-AS_IF([test "x$with_vulkan" = "xyes"], [
-
-  AC_CHECK_LIB([vulkan], [vkCreateInstance])
-  AC_CHECK_PROGS([PYTHON3], [python3 python])
-  PKG_CHECK_MODULES([VULKAN], [vulkan])
-  with_vulkan=yes
-  DEFINES="$DEFINES -DWITH_VULKAN"
+AC_ARG_WITH([vulkan],
+            AS_HELP_STRING([--with-vulkan], [enable vulkan(experimental)]))
+AS_IF([test "x$with_vulkan" = "xyes"],
+[
+   AC_CHECK_LIB([vulkan], [vkCreateInstance])
+   AC_CHECK_PROGS([PYTHON3], [python3 python])
+   PKG_CHECK_MODULES([VULKAN], [vulkan])
+   AC_DEFINE([WITH_VULKAN], [1], [Vulkan is supported.])
+   with_vulkan=yes
 ],[
-  with_vulkan=no
+   with_vulkan=no
 ])
 AM_CONDITIONAL([WITH_VULKAN], [test "x$with_vulkan" = "xyes"])
 

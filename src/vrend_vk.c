@@ -5,9 +5,9 @@
 
 #include "util/u_double_list.h"
 #include "util/u_memory.h"
-#include "virgl_vk.h"
+#include "vrend_vk.h"
 
-struct virgl_vk *vulkan_state;
+struct vrend_vk *vulkan_state;
 
 const char* vkresult_to_string(VkResult res)
 {
@@ -50,6 +50,12 @@ const char* vkresult_to_string(VkResult res)
    }
 }
 
+#define CHECK_VK_RESULT(Result, ErrMsg, Expression)               \
+   if (VK_SUCCESS != (Result)) {                                     \
+      fprintf(stderr, ErrMsg "(%s)\n", vkresult_to_string(Result));  \
+      Expression;                                                    \
+   }
+
 static int
 init_physical_devices(void)
 {
@@ -66,11 +72,7 @@ init_physical_devices(void)
    res = vkEnumeratePhysicalDevices(vulkan_state->vk_instance,
                                     &device_count,
                                     NULL);
-   if (VK_SUCCESS != res) {
-      fprintf(stderr, "vulkan device enumeration failed (%s)",
-                      vkresult_to_string(res));
-      return -1;
-   }
+   CHECK_VK_RESULT(res, "vulkan device enumeration failed", return -1);
 
    if (device_count == 0) {
       fprintf(stderr, "No device supports Vulkan.\n");
@@ -87,23 +89,20 @@ init_physical_devices(void)
    res = vkEnumeratePhysicalDevices(vulkan_state->vk_instance,
                                     &device_count,
                                     vulkan_state->physical_devices);
-   if (VK_SUCCESS != res) {
-      fprintf(stderr, "vulkan device enumeration failed (%s)", vkresult_to_string(res));
-      return -1;
-   }
+   CHECK_VK_RESULT(res, "vulkan device enumeration failed", return -1);
 
    vulkan_state->physical_device_count = device_count;
    return 0;
 }
 
 int
-virgl_vk_init(void)
+vrend_vk_init(void)
 {
    VkResult vk_res;
    VkApplicationInfo application_info = { 0 };
    VkInstanceCreateInfo info = { 0 };
 
-   vulkan_state = CALLOC_STRUCT(virgl_vk);
+   vulkan_state = CALLOC_STRUCT(vrend_vk);
    if (NULL == vulkan_state) {
       return -1;
    }
@@ -131,27 +130,25 @@ virgl_vk_init(void)
 
    do {
       vk_res = vkCreateInstance(&info, NULL, &vulkan_state->vk_instance);
-      if (VK_SUCCESS != vk_res) {
-         fprintf(stderr, "Vk init failed (%s)\n", vkresult_to_string(vk_res));
-         break;
-      }
+      CHECK_VK_RESULT(vk_res, "vulkan init failed", break);
 
       if (0 != init_physical_devices()) {
          break;
       }
 
       /* success path */
-      printf("Vulkan state created with %d devices.\n", vulkan_state->physical_device_count);
+      printf("Vulkan state created with %d devices.\n",
+             vulkan_state->physical_device_count);
       return 0;
    } while (0);
 
    /* failure branch */
-   virgl_vk_destroy();
+   vrend_vk_destroy();
    return -1;
 }
 
 void
-virgl_vk_destroy(void)
+vrend_vk_destroy(void)
 {
    if (NULL == vulkan_state) {
       return;

@@ -36,10 +36,11 @@
 #include "util/u_math.h"
 #include "vrend_renderer.h"
 
+#include "config.h"
 #include "virglrenderer.h"
 
 #ifdef WITH_VULKAN
-#include "virgl_vk.h"
+#include "vrend_vk.h"
 #endif
 
 #ifdef HAVE_EPOXY_EGL_H
@@ -292,7 +293,7 @@ void virgl_renderer_cleanup(void *cookie)
    }
 #endif
 #ifdef WITH_VULKAN
-   virgl_vk_destroy();
+   vrend_vk_destroy();
 #endif
 }
 
@@ -313,7 +314,7 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
 
    if (flags & VIRGL_RENDERER_USE_VULKAN) {
 #ifdef WITH_VULKAN
-      if (0 != virgl_vk_init()) {
+      if (0 != vrend_vk_init()) {
          return -1;
       }
 #else
